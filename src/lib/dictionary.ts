@@ -96,6 +96,20 @@ export const dictionary = {
       priceCalcTitle: "Price per unit",
       priceCalcSubtitle: "Enter a total price to see the cost per unit across every measurement.",
       priceLabel: "Total price (USD)",
+      modeManual: "Manual",
+      modePaste: "Paste a Listing",
+      pasteTitle: "Paste the listing text (Facebook, Encuentra24, etc.)",
+      pastePlaceholder: "Ex: 20m frente y 60m largo. $75,000",
+      calculateButton: "Calculate",
+      noDetection: "Couldn't detect a measurement. Try the manual tab instead.",
+      detectedFrenteFondo: (frente: string, fondo: string, sideUnit: string, area: string, areaUnit: string) =>
+        `Detected: ${frente} x ${fondo} ${sideUnit} = ${area} ${areaUnit}`,
+      detectedArea: (value: string, unitLabel: string) => `Detected: ${value} ${unitLabel}`,
+      detectedManzanaRemainder: (manzanas: string, varas: string, total: string) =>
+        `Detected: ${manzanas} manzanas + ${varas} varas² = ${total} varas²`,
+      detectedConstructionOnly: (value: string, unitLabel: string) => `Detected (construction): ${value} ${unitLabel}`,
+      detectedConstructionNote: (value: string, unitLabel: string) => `Construction: ${value} ${unitLabel}`,
+      costPerUnitLine: (unitLabel: string, price: string) => `Cost per ${unitLabel}: ${price}`,
     },
     footer: {
       tagline: "Land, property and the guidance to buy it right, for El Salvador.",
@@ -204,6 +218,20 @@ export const dictionary = {
       priceCalcTitle: "Precio por unidad",
       priceCalcSubtitle: "Ingresa un precio total para ver el costo por unidad en cada medida.",
       priceLabel: "Precio total (USD)",
+      modeManual: "Manual",
+      modePaste: "Pega un Anuncio",
+      pasteTitle: "Pega el texto del anuncio (Facebook, Encuentra24, etc.)",
+      pastePlaceholder: "Ej: 20m de frente y 60m de largo. $75,000",
+      calculateButton: "Calcular",
+      noDetection: "No se detectó ninguna medida. Intenta con la pestaña manual.",
+      detectedFrenteFondo: (frente: string, fondo: string, sideUnit: string, area: string, areaUnit: string) =>
+        `Detectado: ${frente} x ${fondo} ${sideUnit} = ${area} ${areaUnit}`,
+      detectedArea: (value: string, unitLabel: string) => `Detectado: ${value} ${unitLabel}`,
+      detectedManzanaRemainder: (manzanas: string, varas: string, total: string) =>
+        `Detectado: ${manzanas} manzanas + ${varas} varas² = ${total} varas²`,
+      detectedConstructionOnly: (value: string, unitLabel: string) => `Detectado (construcción): ${value} ${unitLabel}`,
+      detectedConstructionNote: (value: string, unitLabel: string) => `Construcción: ${value} ${unitLabel}`,
+      costPerUnitLine: (unitLabel: string, price: string) => `Costo por ${unitLabel}: ${price}`,
     },
     footer: {
       tagline: "Terrenos, propiedades y la guía para comprarlas bien, en El Salvador.",

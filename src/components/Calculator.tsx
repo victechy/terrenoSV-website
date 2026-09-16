@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { AreaUnit, conversionFactors, formatAreaNumber, formatUsdCurrency, unitLabels } from "@/lib/converter";
 import { Locale, getDictionary } from "@/lib/dictionary";
+import { deriveAreaResult, parseListingText } from "@/lib/listingParser";
 
 const ALL_UNITS = Object.keys(conversionFactors) as AreaUnit[];
 
@@ -11,6 +12,10 @@ export default function Calculator({ locale }: { locale: Locale }) {
   const [amount, setAmount] = useState("1");
   const [unit, setUnit] = useState<AreaUnit>("manzanas");
   const [price, setPrice] = useState("");
+
+  const [pasteText, setPasteText] = useState("");
+  const [detectedMessage, setDetectedMessage] = useState<string | null>(null);
+  const [detectedNote, setDetectedNote] = useState<string | null>(null);
 
   const numericAmount = parseFloat(amount);
   const numericPrice = parseFloat(price);
@@ -30,85 +35,178 @@ export default function Calculator({ locale }: { locale: Locale }) {
 
   const hasPrice = isFinite(numericPrice) && numericPrice > 0 && isFinite(baseMeters) && baseMeters > 0;
 
+  // Parses free text copied from a Facebook/Encuentra24/WhatsApp listing and
+  // fills in the manual fields below with whatever it finds — dimensions,
+  // total area, or a construction size — instead of duplicating a second
+  // results table just for pasted listings.
+  const handleParseListing = () => {
+    const parsed = parseListingText(pasteText);
+    const { land, construction, usedConstructionAsPrimary } = deriveAreaResult(parsed);
+    const primary = land || (usedConstructionAsPrimary ? construction : null);
+
+    if (!primary) {
+      setDetectedMessage(dict.calculator.noDetection);
+      setDetectedNote(null);
+      return;
+    }
+
+    setAmount(String(primary.value));
+    setUnit(primary.unit);
+
+    if (parsed.manzanaRemainder) {
+      const { manzanas, remainderVaras } = parsed.manzanaRemainder;
+      setDetectedMessage(
+        dict.calculator.detectedManzanaRemainder(
+          formatAreaNumber(manzanas),
+          formatAreaNumber(remainderVaras),
+          formatAreaNumber(primary.value)
+        )
+      );
+    } else if (parsed.sides.length >= 2) {
+      const [sideA, sideB] = parsed.sides;
+      const sideUnitLabel = sideA.unit === "varas2" ? "varas" : locale === "es" ? "metros" : "meters";
+      setDetectedMessage(
+        dict.calculator.detectedFrenteFondo(
+          formatAreaNumber(sideA.value),
+          formatAreaNumber(sideB.value),
+          sideUnitLabel,
+          formatAreaNumber(primary.value),
+          unitLabels[primary.unit][locale]
+        )
+      );
+    } else if (usedConstructionAsPrimary) {
+      setDetectedMessage(dict.calculator.detectedConstructionOnly(formatAreaNumber(primary.value), unitLabels[primary.unit][locale]));
+    } else {
+      setDetectedMessage(dict.calculator.detectedArea(formatAreaNumber(primary.value), unitLabels[primary.unit][locale]));
+    }
+
+    setDetectedNote(
+      construction && !usedConstructionAsPrimary
+        ? dict.calculator.detectedConstructionNote(formatAreaNumber(construction.value), unitLabels[construction.unit][locale])
+        : null
+    );
+
+    if (parsed.totalPrice) {
+      setPrice(String(parsed.totalPrice));
+    } else if (parsed.pricePerUnit) {
+      // No total was stated, just a rate ("$45/v2") — back it out into an
+      // equivalent total so the price-per-unit table below still works for
+      // every unit, not just the one the rate happened to be quoted in.
+      const baseValueInMeters = primary.value * conversionFactors[primary.unit];
+      const equivalentTotal = parsed.pricePerUnit.rate * (baseValueInMeters / conversionFactors[parsed.pricePerUnit.unit]);
+      setPrice(String(equivalentTotal));
+    }
+  };
+
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
-      <div className="rounded-2xl border border-border bg-surface p-6">
-        <div className="grid grid-cols-[1fr_auto] gap-3">
-          <div>
-            <label className="mb-1 block text-xs font-medium text-foreground-muted">
-              {dict.calculator.inputLabel}
-            </label>
+    <div>
+      <div className="mb-6 rounded-2xl border border-border bg-surface p-6">
+        <h2 className="text-sm font-semibold text-foreground-muted">{dict.calculator.modePaste}</h2>
+        <p className="mt-1 text-xs text-foreground-muted">{dict.calculator.pasteTitle}</p>
+
+        <textarea
+          value={pasteText}
+          onChange={(e) => setPasteText(e.target.value)}
+          placeholder={dict.calculator.pastePlaceholder}
+          rows={3}
+          className="mt-3 w-full resize-y rounded-lg border border-border bg-background px-4 py-3 text-sm outline-none focus:border-primary"
+        />
+
+        <button
+          type="button"
+          onClick={handleParseListing}
+          disabled={!pasteText.trim()}
+          className="mt-3 rounded-full bg-accent-warm px-5 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+        >
+          {dict.calculator.calculateButton}
+        </button>
+
+        {detectedMessage && (
+          <div className="mt-4 rounded-lg bg-surface-muted px-4 py-3 text-sm">
+            <p className="font-medium text-foreground">{detectedMessage}</p>
+            {detectedNote && <p className="mt-1 text-foreground-muted">{detectedNote}</p>}
+          </div>
+        )}
+      </div>
+
+      <h2 className="mb-3 text-sm font-semibold text-foreground-muted">{dict.calculator.modeManual}</h2>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div className="rounded-2xl border border-border bg-surface p-6">
+          <div className="grid grid-cols-[1fr_auto] gap-3">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-foreground-muted">
+                {dict.calculator.inputLabel}
+              </label>
+              <input
+                type="number"
+                inputMode="decimal"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className="w-full rounded-lg border border-border bg-background px-4 py-3 text-lg font-semibold outline-none focus:border-primary"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-foreground-muted">
+                {dict.calculator.unitLabel}
+              </label>
+              <select
+                value={unit}
+                onChange={(e) => setUnit(e.target.value as AreaUnit)}
+                className="h-[50px] rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-primary"
+              >
+                {ALL_UNITS.map((u) => (
+                  <option key={u} value={u}>
+                    {unitLabels[u][locale]}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <h3 className="mt-6 mb-3 text-sm font-semibold text-foreground-muted">{dict.calculator.resultsTitle}</h3>
+          <ul className="divide-y divide-border">
+            {results.map((r) => (
+              <li key={r.unit} className="flex items-center justify-between py-2.5">
+                <span className="text-sm text-foreground-muted">{unitLabels[r.unit][locale]}</span>
+                <span className="font-mono text-sm font-semibold text-foreground">{formatAreaNumber(r.value)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="rounded-2xl border border-border bg-surface p-6">
+          <h3 className="text-sm font-semibold text-foreground-muted">{dict.calculator.priceCalcTitle}</h3>
+          <p className="mt-1 text-sm text-foreground-muted">{dict.calculator.priceCalcSubtitle}</p>
+
+          <label className="mt-4 mb-1 block text-xs font-medium text-foreground-muted">
+            {dict.calculator.priceLabel}
+          </label>
+          <div className="flex items-center rounded-lg border border-border bg-background px-4 focus-within:border-primary">
+            <span className="text-foreground-muted">$</span>
             <input
               type="number"
               inputMode="decimal"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className="w-full rounded-lg border border-border bg-background px-4 py-3 text-lg font-semibold outline-none focus:border-primary"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              className="w-full bg-transparent px-2 py-3 text-lg font-semibold outline-none"
             />
           </div>
-          <div>
-            <label className="mb-1 block text-xs font-medium text-foreground-muted">
-              {dict.calculator.unitLabel}
-            </label>
-            <select
-              value={unit}
-              onChange={(e) => setUnit(e.target.value as AreaUnit)}
-              className="h-[50px] rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-primary"
-            >
-              {ALL_UNITS.map((u) => (
-                <option key={u} value={u}>
-                  {unitLabels[u][locale]}
-                </option>
+
+          <ul className="mt-6 divide-y divide-border">
+            {hasPrice &&
+              [{ unit, value: numericAmount }, ...results].map((r) => (
+                <li key={r.unit} className="flex items-center justify-between py-2.5">
+                  <span className="text-sm text-foreground-muted">/ {unitLabels[r.unit][locale]}</span>
+                  <span className="font-mono text-sm font-semibold text-primary">
+                    ${formatUsdCurrency(numericPrice / (baseMeters / conversionFactors[r.unit]))}
+                  </span>
+                </li>
               ))}
-            </select>
-          </div>
+            {!hasPrice && (
+              <li className="py-6 text-center text-sm text-foreground-muted">{dict.calculator.priceLabel}</li>
+            )}
+          </ul>
         </div>
-
-        <h3 className="mt-6 mb-3 text-sm font-semibold text-foreground-muted">{dict.calculator.resultsTitle}</h3>
-        <ul className="divide-y divide-border">
-          {results.map((r) => (
-            <li key={r.unit} className="flex items-center justify-between py-2.5">
-              <span className="text-sm text-foreground-muted">{unitLabels[r.unit][locale]}</span>
-              <span className="font-mono text-sm font-semibold text-foreground">{formatAreaNumber(r.value)}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <div className="rounded-2xl border border-border bg-surface p-6">
-        <h3 className="text-sm font-semibold text-foreground-muted">{dict.calculator.priceCalcTitle}</h3>
-        <p className="mt-1 text-sm text-foreground-muted">{dict.calculator.priceCalcSubtitle}</p>
-
-        <label className="mt-4 mb-1 block text-xs font-medium text-foreground-muted">
-          {dict.calculator.priceLabel}
-        </label>
-        <div className="flex items-center rounded-lg border border-border bg-background px-4 focus-within:border-primary">
-          <span className="text-foreground-muted">$</span>
-          <input
-            type="number"
-            inputMode="decimal"
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
-            className="w-full bg-transparent px-2 py-3 text-lg font-semibold outline-none"
-          />
-        </div>
-
-        <ul className="mt-6 divide-y divide-border">
-          {hasPrice &&
-            [{ unit, value: numericAmount }, ...results].map((r) => (
-              <li key={r.unit} className="flex items-center justify-between py-2.5">
-                <span className="text-sm text-foreground-muted">/ {unitLabels[r.unit][locale]}</span>
-                <span className="font-mono text-sm font-semibold text-primary">
-                  ${formatUsdCurrency(numericPrice / (baseMeters / conversionFactors[r.unit]))}
-                </span>
-              </li>
-            ))}
-          {!hasPrice && (
-            <li className="py-6 text-center text-sm text-foreground-muted">
-              {dict.calculator.priceLabel} →
-            </li>
-          )}
-        </ul>
       </div>
     </div>
   );
