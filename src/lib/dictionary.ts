@@ -48,9 +48,9 @@ export const dictionary = {
       calcGlimpseBody: "Manzanas, varas², tareas, hectares: units a normal calculator doesn't know. This one's built for El Salvador.",
       calcGlimpseExample: "1 manzana equals",
       calcGlimpseCta: "Try the full calculator",
-      sellPromoTitle: "List your land on terrenoSV",
-      sellPromoBody: "Reach buyers in El Salvador and abroad. Every listing is reviewed before it goes live.",
-      sellPromoCta: "Submit your listing",
+      sellPromoTitle: "List with terrenoSV",
+      sellPromoBody: "A vetted marketplace for real estate professionals with land to sell in El Salvador.",
+      sellPromoCta: "Apply to list",
     },
     listings: {
       title: "Property listings",
@@ -130,7 +130,7 @@ export const dictionary = {
       company: "Company",
       about: "About us",
       glossary: "Measurement glossary",
-      sell: "List your property",
+      sell: "For realtors",
       privacy: "Privacy policy",
     },
     bookPage: {
@@ -164,16 +164,16 @@ export const dictionary = {
       ],
     },
     sell: {
-      title: "List your land or property",
-      subtitle: "Reach thousands of buyers in El Salvador and abroad",
-      body: "terrenoSV connects sellers with verified buyers, in El Salvador and around the world. Submit your listing and our team reviews it before it goes live, so buyers can browse with confidence.",
+      title: "List with terrenoSV",
+      subtitle: "For real estate professionals with land to sell in El Salvador",
+      body: "terrenoSV is a vetted marketplace connecting real estate professionals with buyers in El Salvador and abroad. We work directly with realtors and agents managing multiple properties. Apply below and our team will follow up with next steps.",
       benefit1Title: "Reach real buyers",
-      benefit1Body: "Your listing appears on both the terrenoSV app and this site, seen by buyers actively searching for land in El Salvador.",
-      benefit2Title: "Verified process",
-      benefit2Body: "We verify every seller's identity before approving a listing, protecting both you and the buyers who reach out.",
-      benefit3Title: "No cost to list",
-      benefit3Body: "Submitting a listing is free. You control your own price, photos, and contact details.",
-      cta: "Submit your listing",
+      benefit1Body: "Your listings appear on both the terrenoSV app and this site, seen by buyers actively searching for land in El Salvador.",
+      benefit2Title: "Verified, vetted process",
+      benefit2Body: "Every realtor and every listing is reviewed before going live, protecting your reputation and our buyers' trust.",
+      benefit3Title: "Built for portfolios",
+      benefit3Body: "terrenoSV works best for realtors and agents with multiple properties to list, not one-off personal sales.",
+      cta: "Apply to list",
       formUrl: "https://forms.gle/49eZm51XyUMfdHqs8",
     },
     privacy: {
@@ -183,7 +183,7 @@ export const dictionary = {
       sections: [
         {
           heading: "Overview",
-          body: "terrenoSV is a free service for converting Salvadoran land measurements and browsing property listings, available as a mobile app and at terrenosv.org.",
+          body: "Converting Salvadoran land measurements and browsing property listings is free for everyone, on both the terrenoSV app and terrenosv.org. Listing a property is available to vetted real estate professionals through an application process.",
         },
         {
           heading: "No account required",
@@ -203,7 +203,7 @@ export const dictionary = {
         },
         {
           heading: "Property listings",
-          body: "Sellers who submit a property listing (via our Google Form) have their information, including name, contact details, and property specifics, displayed publicly on the app and website. Submission and management of listings happen through Google Forms and Google Sheets, separately from the app and site's own code.",
+          body: "Realtors and agents who apply to list a property have their information, including name, contact details, and property specifics, displayed publicly on the app and website once approved. Applications and listing management happen through Google Forms and Google Sheets, separately from the app and site's own code.",
         },
         {
           heading: "Contacting sellers",
@@ -275,9 +275,9 @@ export const dictionary = {
       calcGlimpseBody: "Manzanas, varas², tareas, hectáreas: unidades que una calculadora normal no conoce. Esta está hecha para El Salvador.",
       calcGlimpseExample: "1 manzana equivale a",
       calcGlimpseCta: "Probar la calculadora completa",
-      sellPromoTitle: "Publica tu terreno en terrenoSV",
-      sellPromoBody: "Llega a compradores en El Salvador y en el exterior. Cada anuncio se revisa antes de publicarse.",
-      sellPromoCta: "Publicar mi terreno",
+      sellPromoTitle: "Publica con terrenoSV",
+      sellPromoBody: "Un mercado verificado para profesionales inmobiliarios con terreno para vender en El Salvador.",
+      sellPromoCta: "Aplicar para publicar",
     },
     listings: {
       title: "Propiedades disponibles",
@@ -357,7 +357,7 @@ export const dictionary = {
       company: "Compañía",
       about: "Sobre nosotros",
       glossary: "Glosario de medidas",
-      sell: "Publica tu terreno",
+      sell: "Para corredores",
       privacy: "Política de privacidad",
     },
     bookPage: {
@@ -391,16 +391,16 @@ export const dictionary = {
       ],
     },
     sell: {
-      title: "Publica tu terreno o propiedad",
-      subtitle: "Llega a miles de compradores en El Salvador y en el exterior",
-      body: "terrenoSV conecta a vendedores con compradores verificados, en El Salvador y alrededor del mundo. Envía tu anuncio y nuestro equipo lo revisa antes de publicarlo, para que los compradores puedan explorar con confianza.",
+      title: "Publica con terrenoSV",
+      subtitle: "Para profesionales inmobiliarios con terreno para vender en El Salvador",
+      body: "terrenoSV es un mercado verificado que conecta a profesionales inmobiliarios con compradores en El Salvador y en el exterior. Trabajamos directamente con corredores y agentes que manejan varias propiedades. Aplica a continuación y nuestro equipo te contactará con los siguientes pasos.",
       benefit1Title: "Llega a compradores reales",
-      benefit1Body: "Tu anuncio aparece tanto en la app terrenoSV como en este sitio, visto por compradores que buscan activamente terreno en El Salvador.",
+      benefit1Body: "Tus anuncios aparecen tanto en la app terrenoSV como en este sitio, vistos por compradores que buscan activamente terreno en El Salvador.",
       benefit2Title: "Proceso verificado",
-      benefit2Body: "Verificamos la identidad de cada vendedor antes de aprobar un anuncio, protegiendo tanto a ti como a los compradores que te contactan.",
-      benefit3Title: "Sin costo por publicar",
-      benefit3Body: "Publicar un anuncio es gratis. Tú controlas tu propio precio, fotos y datos de contacto.",
-      cta: "Publicar mi terreno",
+      benefit2Body: "Cada corredor y cada anuncio se revisan antes de publicarse, protegiendo tu reputación y la confianza de nuestros compradores.",
+      benefit3Title: "Hecho para carteras de propiedades",
+      benefit3Body: "terrenoSV funciona mejor para corredores y agentes con varias propiedades para publicar, no para ventas personales aisladas.",
+      cta: "Aplicar para publicar",
       formUrl: "https://forms.gle/49eZm51XyUMfdHqs8",
     },
     privacy: {
@@ -410,7 +410,7 @@ export const dictionary = {
       sections: [
         {
           heading: "Resumen",
-          body: "terrenoSV es un servicio gratuito para convertir medidas de terreno salvadoreñas y explorar propiedades, disponible como app móvil y en terrenosv.org.",
+          body: "Convertir medidas de terreno salvadoreñas y explorar propiedades es gratis para todos, tanto en la app terrenoSV como en terrenosv.org. Publicar una propiedad está disponible para profesionales inmobiliarios verificados mediante un proceso de aplicación.",
         },
         {
           heading: "No se requiere cuenta",
@@ -430,7 +430,7 @@ export const dictionary = {
         },
         {
           heading: "Anuncios de propiedades",
-          body: "Los vendedores que envían un anuncio (mediante nuestro formulario de Google) tienen su información, incluyendo nombre, datos de contacto y detalles de la propiedad, mostrada públicamente en la app y el sitio web. El envío y manejo de anuncios ocurre mediante Google Forms y Google Sheets, por separado del código de la app y el sitio.",
+          body: "Los corredores y agentes que aplican para publicar una propiedad tienen su información, incluyendo nombre, datos de contacto y detalles de la propiedad, mostrada públicamente en la app y el sitio web una vez aprobados. Las aplicaciones y el manejo de anuncios ocurre mediante Google Forms y Google Sheets, por separado del código de la app y el sitio.",
         },
         {
           heading: "Contactar a un vendedor",
