@@ -5,6 +5,7 @@ import { formatAreaNumber, formatUsdCurrency, unitLabels } from "@/lib/converter
 import { formatPhoneForWhatsApp } from "@/lib/listings";
 import ListingGallery from "../ListingGallery";
 import FavoriteButton from "../FavoriteButton";
+import ShareButton from "../ShareButton";
 
 export default function ListingDetailView({ listing, locale }: { listing: Listing; locale: Locale }) {
   const dict = getDictionary(locale);
@@ -97,6 +98,11 @@ export default function ListingDetailView({ listing, locale }: { listing: Listin
 
           <div className="mt-6 flex flex-wrap gap-3">
             <FavoriteButton listingId={listing.id} locale={locale} variant="full" />
+            <ShareButton
+              text={dict.listingDetail.shareText(listing.title)}
+              url={`https://terrenosv.org${localizedPath(`/listings/${listing.slug}`, locale)}`}
+              locale={locale}
+            />
             {listing.mapUrl && (
               <a
                 href={listing.mapUrl}
@@ -154,7 +160,14 @@ export default function ListingDetailView({ listing, locale }: { listing: Listin
             {conversion.conversions.map((c) => (
               <li key={c.unit} className="flex items-center justify-between px-4 py-3">
                 <span className="text-sm text-foreground-muted">{unitLabels[c.unit][locale]}</span>
-                <span className="font-mono text-sm font-semibold text-foreground">{formatAreaNumber(c.value)}</span>
+                <span className="text-right">
+                  <span className="block font-mono text-sm font-semibold text-foreground">{formatAreaNumber(c.value)}</span>
+                  {c.perUnitPrice != null && (
+                    <span className="block text-xs text-foreground-muted">
+                      ${formatUsdCurrency(c.perUnitPrice)}/{unitLabels[c.unit][locale]}
+                    </span>
+                  )}
+                </span>
               </li>
             ))}
           </ul>

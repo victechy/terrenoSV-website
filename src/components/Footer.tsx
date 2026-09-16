@@ -29,6 +29,21 @@ export default function Footer({ locale }: { locale: Locale }) {
               </Link>
             </div>
             <div className="flex flex-col gap-2 text-sm">
+              <span className="font-semibold text-white">{dict.footer.company}</span>
+              <Link href={localizedPath("/about", locale)} className="text-white/70 hover:text-white">
+                {dict.footer.about}
+              </Link>
+              <Link href={localizedPath("/glossary", locale)} className="text-white/70 hover:text-white">
+                {dict.footer.glossary}
+              </Link>
+              <Link href={localizedPath("/sell", locale)} className="text-white/70 hover:text-white">
+                {dict.footer.sell}
+              </Link>
+              <Link href={localizedPath("/privacy", locale)} className="text-white/70 hover:text-white">
+                {dict.footer.privacy}
+              </Link>
+            </div>
+            <div className="flex flex-col gap-2 text-sm">
               <span className="font-semibold text-white">{dict.footer.contact}</span>
               <a href="mailto:vflores.sv@gmail.com" className="text-white/70 hover:text-white">
                 vflores.sv@gmail.com

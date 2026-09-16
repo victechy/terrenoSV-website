@@ -4,7 +4,7 @@ import { fetchListings } from "@/lib/listings";
 export const dynamic = "force-static";
 
 const BASE_URL = "https://terrenosv.org";
-const STATIC_PATHS = ["", "/listings", "/calculator", "/book"];
+const STATIC_PATHS = ["", "/listings", "/calculator", "/book", "/about", "/glossary", "/sell", "/privacy"];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const listings = await fetchListings().catch(() => []);
