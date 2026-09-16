@@ -16,6 +16,13 @@
   --border: #e2e8f0;
   --border-strong: #0066cc;
   --shadow: rgba(0, 0, 0, 0.08);
+
+  /* Fixed brand blue for the header/footer chrome — matches the wordmark
+     artwork's own blue, deliberately NOT redefined in the dark-mode block
+     below so the wordmark (pure white line art) always has the same,
+     correct background to sit on regardless of light/dark theme. */
+  --brand-blue: #003da5;
+  --brand-blue-dark: #002d7a;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -49,6 +56,8 @@
   --color-success: var(--success);
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
+  --color-brand-blue: var(--brand-blue);
+  --color-brand-blue-dark: var(--brand-blue-dark);
   --font-sans: var(--font-inter);
   --font-brand: var(--font-permanent-marker);
 }

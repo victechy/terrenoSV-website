@@ -20,17 +20,14 @@ export default function Header({ locale }: { locale: Locale }) {
   const isActive = (href: string) => pathname === href || pathname === `${href}/`;
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-surface/90 backdrop-blur">
+    <header className="sticky top-0 z-40 bg-brand-blue">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
         <Link
           href={localizedPath("/", locale)}
-          className="flex items-center gap-2 shrink-0"
+          className="flex items-center shrink-0"
           onClick={() => setOpen(false)}
         >
-          <Image src="/logo-icon.png" alt="" width={36} height={36} unoptimized className="rounded-lg" />
-          <span className="font-brand text-2xl leading-none text-primary">
-            terreno<span className="text-accent-warm">SV</span>
-          </span>
+          <Image src="/wordmark.png" alt="terrenoSV" width={168} height={47} unoptimized className="h-8 w-auto sm:h-9" priority />
         </Link>
 
         <nav className="hidden md:flex items-center gap-6">
@@ -38,8 +35,8 @@ export default function Header({ locale }: { locale: Locale }) {
             <Link
               key={link.href}
               href={link.href}
-              className={`text-sm font-medium transition-colors hover:text-primary ${
-                isActive(link.href) ? "text-primary" : "text-foreground-muted"
+              className={`text-sm font-medium transition-colors hover:text-white ${
+                isActive(link.href) ? "text-white" : "text-white/70"
               }`}
             >
               {link.label}
@@ -50,13 +47,13 @@ export default function Header({ locale }: { locale: Locale }) {
         <div className="hidden md:flex items-center gap-3">
           <Link
             href={localizedPath(pathname, otherLocale(locale))}
-            className="text-sm font-medium text-foreground-muted hover:text-primary"
+            className="text-sm font-medium text-white/70 hover:text-white"
           >
             {dict.nav.langSwitch}
           </Link>
           <Link
             href={localizedPath("/#app", locale)}
-            className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
+            className="rounded-full bg-accent px-4 py-2 text-sm font-semibold text-[#1a202c] transition-colors hover:opacity-90"
           >
             {dict.nav.app}
           </Link>
@@ -64,7 +61,7 @@ export default function Header({ locale }: { locale: Locale }) {
 
         <button
           type="button"
-          className="md:hidden rounded-md border border-border p-2 text-foreground"
+          className="md:hidden rounded-md border border-white/30 p-2 text-white"
           aria-label="Menu"
           aria-expanded={open}
           onClick={() => setOpen((v) => !v)}
@@ -76,7 +73,7 @@ export default function Header({ locale }: { locale: Locale }) {
       </div>
 
       {open && (
-        <div className="md:hidden border-t border-border bg-surface px-4 pb-4">
+        <div className="md:hidden border-t border-white/15 bg-brand-blue px-4 pb-4">
           <nav className="flex flex-col gap-1 pt-2">
             {links.map((link) => (
               <Link
@@ -84,7 +81,7 @@ export default function Header({ locale }: { locale: Locale }) {
                 href={link.href}
                 onClick={() => setOpen(false)}
                 className={`rounded-md px-2 py-2 text-sm font-medium ${
-                  isActive(link.href) ? "bg-surface-muted text-primary" : "text-foreground-muted"
+                  isActive(link.href) ? "bg-white/10 text-white" : "text-white/70"
                 }`}
               >
                 {link.label}
@@ -93,14 +90,14 @@ export default function Header({ locale }: { locale: Locale }) {
             <Link
               href={localizedPath(pathname, otherLocale(locale))}
               onClick={() => setOpen(false)}
-              className="rounded-md px-2 py-2 text-sm font-medium text-foreground-muted"
+              className="rounded-md px-2 py-2 text-sm font-medium text-white/70"
             >
               {dict.nav.langSwitch}
             </Link>
             <Link
               href={localizedPath("/#app", locale)}
               onClick={() => setOpen(false)}
-              className="mt-2 rounded-full bg-primary px-4 py-2 text-center text-sm font-semibold text-white"
+              className="mt-2 rounded-full bg-accent px-4 py-2 text-center text-sm font-semibold text-[#1a202c]"
             >
               {dict.nav.app}
             </Link>
