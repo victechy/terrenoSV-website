@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -26,6 +27,7 @@ export default function Header({ locale }: { locale: Locale }) {
           className="flex items-center gap-2 shrink-0"
           onClick={() => setOpen(false)}
         >
+          <Image src="/logo-icon.png" alt="" width={36} height={36} unoptimized className="rounded-lg" />
           <span className="font-brand text-2xl leading-none text-primary">
             terreno<span className="text-accent-warm">SV</span>
           </span>

@@ -26,6 +26,7 @@ export const metadata: Metadata = {
     "Browse verified land and property listings in El Salvador, convert manzanas and varas to acres, and get the guidance behind the terrenoSV app and guidebook.",
   icons: {
     icon: "/favicon.png",
+    apple: "/logo-icon.png",
   },
 };
 
