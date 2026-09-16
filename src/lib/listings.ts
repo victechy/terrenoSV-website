@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { csvToRecords } from "./csv";
 import { AreaUnit, conversionFactors, QUICK_CONVERT_UNITS } from "./converter";
 
@@ -217,8 +218,17 @@ function mapRow(row: Record<string, string>): Listing | null {
   };
 }
 
-export async function fetchListings(): Promise<Listing[]> {
-  const res = await fetch(`${SHEET_CSV_URL}&t=${Date.now()}`, { cache: "no-store" });
+async function fetchListingsOnce(): Promise<Listing[]> {
+  // No `cache: "no-store"` here: under `output: "export"` that option makes
+  // Next.js treat this route as needing dynamic (per-request) rendering,
+  // which a static export can't do at all — the page render throws
+  // NEXT_STATIC_GEN_BAILOUT instead of ever getting to run. The `t=` cache
+  // buster below already forces a genuinely fresh fetch on every new build
+  // (a unique URL has nothing to reuse from cache); this is also called
+  // client-side from ListingsBrowser, where the same unique URL defeats the
+  // browser's HTTP cache too, so `no-store` was never doing anything the
+  // timestamp wasn't already doing.
+  const res = await fetch(`${SHEET_CSV_URL}&t=${Date.now()}`);
   if (!res.ok) throw new Error(`Sheet fetch failed: ${res.status}`);
   const csvText = await res.text();
   const records = csvToRecords(csvText);
@@ -228,3 +238,24 @@ export async function fetchListings(): Promise<Listing[]> {
     // Newest submissions first, mirroring the sheet's own append order reversed.
     .reverse();
 }
+
+// A single `next build` calls this from ~30 different places (every locale's
+// home/listings pages, generateStaticParams, generateMetadata and detail page
+// for every listing) — without memoizing, that's ~30 near-simultaneous
+// requests to the same Google Sheets export URL, and a single transient
+// failure among them silently produces an empty list on whichever page
+// happened to hit it (caught by that page's own `.catch(() => [])`). `cache`
+// memoizes this per build/request so it only ever actually fetches once; the
+// retry loop below is belt-and-suspenders for that one real fetch.
+export const fetchListings = cache(async (): Promise<Listing[]> => {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      return await fetchListingsOnce();
+    } catch (error) {
+      lastError = error;
+      if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)));
+    }
+  }
+  throw lastError;
+});
