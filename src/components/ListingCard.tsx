@@ -55,7 +55,7 @@ export default function ListingCard({ listing, locale }: { listing: Listing; loc
 
         <div className="mt-2 flex items-baseline justify-between">
           <span className="text-lg font-bold text-primary">
-            {listing.price ? `$${formatUsdCurrency(listing.price)}` : "—"}
+            {listing.price ? `$${formatUsdCurrency(listing.price)}` : "N/A"}
           </span>
           {primary?.perUnitPrice && (
             <span className="text-xs text-foreground-muted">

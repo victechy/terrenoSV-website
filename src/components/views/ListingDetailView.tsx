@@ -67,7 +67,7 @@ export default function ListingDetailView({ listing, locale }: { listing: Listin
           </p>
 
           <p className="mt-4 text-3xl font-bold text-primary">
-            {listing.price ? `$${formatUsdCurrency(listing.price)}` : "—"}
+            {listing.price ? `$${formatUsdCurrency(listing.price)}` : "N/A"}
           </p>
 
           {conversion && (

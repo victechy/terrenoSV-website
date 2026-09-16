@@ -22,7 +22,7 @@ export default function ListingGallery({ photos, title }: { photos: string[]; ti
         <Image
           key={photos[index]}
           src={photos[index]}
-          alt={`${title} — photo ${index + 1} of ${photos.length}`}
+          alt={`${title} (photo ${index + 1} of ${photos.length})`}
           fill
           unoptimized
           className="object-cover"

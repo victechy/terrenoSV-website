@@ -25,29 +25,29 @@ export const dictionary = {
       featuredTitle: "Recently listed",
       featuredSubtitle: "Pulled live from the same listings feed as the terrenoSV app.",
       viewAll: "View all listings",
-      noListings: "New listings are added regularly — check back soon.",
+      noListings: "New listings are added regularly, so check back soon.",
       featuresTitle: "Everything you need to buy land in El Salvador",
       feature1Title: "Real, structured listings",
       feature1Body:
-        "Every listing shows department, municipality, exact land size, and price per manzana, vara² or acre — no guesswork.",
+        "Every listing shows department, municipality, exact land size, and price per manzana, vara² or acre, no guesswork.",
       feature2Title: "Salvadoran unit converter",
       feature2Body:
-        "Manzanas, varas², tareas — units you won't find on a normal calculator, converted instantly to acres, feet² and meters².",
+        "Manzanas, varas², tareas: units you won't find on a normal calculator, converted instantly to acres, feet² and meters².",
       feature3Title: "Talk to sellers directly",
       feature3Body:
-        "One tap to WhatsApp or email the seller — no middleman, no account required.",
+        "One tap to WhatsApp or email the seller. No middleman, no account required.",
       appPromoTitle: "The terrenoSV app is coming soon",
       appPromoBody:
-        "Everything on this site, in your pocket — browse listings offline, save favorites, and get notified about new land near you.",
+        "Everything on this site, in your pocket: browse listings offline, save favorites, and get notified about new land near you.",
       appPromoCta: "Get notified at launch",
       bookPromoTitle: "Moving to El Salvador",
       bookPromoBody:
-        "The guidebook behind terrenoSV — practical, first-hand advice on relocating, buying land, and settling in El Salvador.",
+        "The guidebook behind terrenoSV: practical, first-hand advice on relocating, buying land, and settling in El Salvador.",
       bookPromoCta: "Learn about the book",
     },
     listings: {
       title: "Property listings",
-      subtitle: "Live from the same feed as the terrenoSV app — updates as new listings are approved.",
+      subtitle: "Live from the same feed as the terrenoSV app, updated as new listings are approved.",
       searchPlaceholder: "Search by title, department or municipality…",
       filterType: "Property type",
       filterTransaction: "For",
@@ -67,7 +67,7 @@ export const dictionary = {
       forSale: "For sale",
       forRent: "For rent",
       loading: "Loading listings…",
-      error: "Couldn't load listings right now — please try again shortly.",
+      error: "Couldn't load listings right now. Please try again shortly.",
     },
     listingDetail: {
       back: "Back to listings",
@@ -98,7 +98,7 @@ export const dictionary = {
       priceLabel: "Total price (USD)",
     },
     footer: {
-      tagline: "Land, property and the guidance to buy it right — for El Salvador.",
+      tagline: "Land, property and the guidance to buy it right, for El Salvador.",
       listings: "Listings",
       calculator: "Calculator",
       book: "The book",
@@ -108,7 +108,7 @@ export const dictionary = {
     bookPage: {
       eyebrow: "The guidebook behind terrenoSV",
       title: "Moving to El Salvador",
-      body: "A practical, first-hand guide to relocating, buying land, and settling in El Salvador — written for repatriados, retirees, and anyone considering the move. terrenoSV and this site grew directly out of the questions the book kept getting asked.",
+      body: "A practical, first-hand guide to relocating, buying land, and settling in El Salvador, written for repatriados, retirees, and anyone considering the move. terrenoSV and this site grew directly out of the questions the book kept getting asked.",
       cta: "Visit Flores Publishing",
       listingsCta: "Browse land & property listings",
     },
@@ -134,23 +134,23 @@ export const dictionary = {
       featuredTitle: "Publicadas recientemente",
       featuredSubtitle: "En tiempo real, desde el mismo feed que usa la app terrenoSV.",
       viewAll: "Ver todas las propiedades",
-      noListings: "Se agregan propiedades nuevas regularmente — vuelve pronto.",
+      noListings: "Se agregan propiedades nuevas regularmente, vuelve pronto.",
       featuresTitle: "Todo lo que necesitas para comprar terreno en El Salvador",
       feature1Title: "Propiedades reales y estructuradas",
       feature1Body:
-        "Cada propiedad muestra departamento, municipio, tamaño exacto y precio por manzana, vara² o acre — sin adivinar.",
+        "Cada propiedad muestra departamento, municipio, tamaño exacto y precio por manzana, vara² o acre, sin adivinar.",
       feature2Title: "Convertidor de medidas salvadoreñas",
       feature2Body:
-        "Manzanas, varas², tareas — unidades que no encontrarás en una calculadora normal, convertidas al instante a acres, pies² y metros².",
+        "Manzanas, varas², tareas: unidades que no encontrarás en una calculadora normal, convertidas al instante a acres, pies² y metros².",
       feature3Title: "Habla directo con el vendedor",
-      feature3Body: "Un toque para WhatsApp o correo — sin intermediarios, sin cuenta.",
+      feature3Body: "Un toque para WhatsApp o correo. Sin intermediarios, sin cuenta.",
       appPromoTitle: "La app terrenoSV llega pronto",
       appPromoBody:
-        "Todo este sitio, en tu bolsillo — explora propiedades sin conexión, guarda tus favoritas y recibe alertas de terrenos cerca de ti.",
+        "Todo este sitio, en tu bolsillo: explora propiedades sin conexión, guarda tus favoritas y recibe alertas de terrenos cerca de ti.",
       appPromoCta: "Avísenme cuando esté lista",
       bookPromoTitle: "Moving to El Salvador",
       bookPromoBody:
-        "La guía detrás de terrenoSV — consejos prácticos y de primera mano para mudarte, comprar terreno y establecerte en El Salvador.",
+        "La guía detrás de terrenoSV: consejos prácticos y de primera mano para mudarte, comprar terreno y establecerte en El Salvador.",
       bookPromoCta: "Conocer el libro",
     },
     listings: {
@@ -175,7 +175,7 @@ export const dictionary = {
       forSale: "En venta",
       forRent: "En alquiler",
       loading: "Cargando propiedades…",
-      error: "No se pudieron cargar las propiedades — intenta de nuevo en un momento.",
+      error: "No se pudieron cargar las propiedades. Intenta de nuevo en un momento.",
     },
     listingDetail: {
       back: "Volver a propiedades",
@@ -206,7 +206,7 @@ export const dictionary = {
       priceLabel: "Precio total (USD)",
     },
     footer: {
-      tagline: "Terrenos, propiedades y la guía para comprarlas bien — en El Salvador.",
+      tagline: "Terrenos, propiedades y la guía para comprarlas bien, en El Salvador.",
       listings: "Propiedades",
       calculator: "Calculadora",
       book: "El libro",
@@ -216,7 +216,7 @@ export const dictionary = {
     bookPage: {
       eyebrow: "La guía detrás de terrenoSV",
       title: "Moving to El Salvador",
-      body: "Una guía práctica y de primera mano para mudarte, comprar terreno y establecerte en El Salvador — escrita para repatriados, jubilados y cualquiera que esté considerando el cambio. terrenoSV y este sitio nacieron directamente de las preguntas que el libro seguía recibiendo.",
+      body: "Una guía práctica y de primera mano para mudarte, comprar terreno y establecerte en El Salvador, escrita para repatriados, jubilados y cualquiera que esté considerando el cambio. terrenoSV y este sitio nacieron directamente de las preguntas que el libro seguía recibiendo.",
       cta: "Visitar Flores Publishing",
       listingsCta: "Ver propiedades y terrenos",
     },

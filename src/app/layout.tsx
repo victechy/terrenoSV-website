@@ -19,8 +19,8 @@ const permanentMarker = Permanent_Marker({
 export const metadata: Metadata = {
   metadataBase: new URL("https://terrenosv.org"),
   title: {
-    default: "terrenoSV — Land & Property in El Salvador",
-    template: "%s — terrenoSV",
+    default: "terrenoSV: Land & Property in El Salvador",
+    template: "%s | terrenoSV",
   },
   description:
     "Browse verified land and property listings in El Salvador, convert manzanas and varas to acres, and get the guidance behind the terrenoSV app and guidebook.",
