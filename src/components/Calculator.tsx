@@ -7,6 +7,47 @@ import { deriveAreaResult, parseListingText } from "@/lib/listingParser";
 
 const ALL_UNITS = Object.keys(conversionFactors) as AreaUnit[];
 
+// Groups digits with thousands commas for display ("70000" -> "70,000")
+// while leaving the raw value (what's actually stored/computed with)
+// untouched — so someone who doesn't bother typing separators still sees an
+// unambiguous number once they tab away.
+function formatThousands(raw: string): string {
+  if (!raw) return "";
+  const [intPart, decPart] = raw.split(".");
+  const groupedInt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return decPart !== undefined ? `${groupedInt}.${decPart}` : groupedInt;
+}
+
+// A plain numeric input, except it shows comma-grouped digits once the field
+// isn't focused — full-precision, no separators while actively typing (so
+// commas don't fight with cursor position), grouped as soon as you tab away.
+function NumberField({
+  value,
+  onChange,
+  className,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  className?: string;
+}) {
+  const [focused, setFocused] = useState(false);
+
+  return (
+    <input
+      type="text"
+      inputMode="decimal"
+      value={focused ? value : formatThousands(value)}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      onChange={(e) => {
+        const raw = e.target.value.replace(/,/g, "");
+        if (raw === "" || /^\d*\.?\d*$/.test(raw)) onChange(raw);
+      }}
+      className={className}
+    />
+  );
+}
+
 export default function Calculator({ locale }: { locale: Locale }) {
   const dict = getDictionary(locale);
   const [amount, setAmount] = useState("1");
@@ -15,7 +56,9 @@ export default function Calculator({ locale }: { locale: Locale }) {
 
   const [pasteText, setPasteText] = useState("");
   const [detectedMessage, setDetectedMessage] = useState<string | null>(null);
-  const [detectedNote, setDetectedNote] = useState<string | null>(null);
+  // Construction note (if any) followed by cost-per-unit line(s), in that
+  // order — same order the app's "Detected" box shows them in.
+  const [detectedExtraLines, setDetectedExtraLines] = useState<string[]>([]);
 
   const numericAmount = parseFloat(amount);
   const numericPrice = parseFloat(price);
@@ -46,7 +89,7 @@ export default function Calculator({ locale }: { locale: Locale }) {
 
     if (!primary) {
       setDetectedMessage(dict.calculator.noDetection);
-      setDetectedNote(null);
+      setDetectedExtraLines([]);
       return;
     }
 
@@ -80,11 +123,42 @@ export default function Calculator({ locale }: { locale: Locale }) {
       setDetectedMessage(dict.calculator.detectedArea(formatAreaNumber(primary.value), unitLabels[primary.unit][locale]));
     }
 
-    setDetectedNote(
-      construction && !usedConstructionAsPrimary
-        ? dict.calculator.detectedConstructionNote(formatAreaNumber(construction.value), unitLabels[construction.unit][locale])
-        : null
-    );
+    const extraLines: string[] = [];
+    if (construction && !usedConstructionAsPrimary) {
+      extraLines.push(
+        dict.calculator.detectedConstructionNote(formatAreaNumber(construction.value), unitLabels[construction.unit][locale])
+      );
+    }
+
+    // Cost per unit: a single follow-up line using the same unit the area
+    // was just detected in (mirrors the app), except the manzana+varas case,
+    // which leads with manzanas as the primary unit so both rates are shown.
+    const baseValueInMeters = primary.value * conversionFactors[primary.unit];
+    const isDualRateCase = !!(parsed.manzanaRemainder && primary.unit === "varas2" && parsed.totalPrice);
+
+    if (isDualRateCase && parsed.totalPrice) {
+      const areaInManzanas = baseValueInMeters / conversionFactors["manzanas"];
+      const pricePerManzana = parsed.totalPrice / areaInManzanas;
+      const pricePerVaras = parsed.totalPrice / primary.value;
+      extraLines.push(dict.calculator.costPerUnitLine(unitLabels["manzanas"][locale], `$${formatUsdCurrency(pricePerManzana)}`));
+      extraLines.push(dict.calculator.costPerUnitLine(unitLabels["varas2"][locale], `$${formatUsdCurrency(pricePerVaras)}`));
+    } else if (parsed.totalPrice) {
+      const pricePerDetectedUnit = parsed.totalPrice / primary.value;
+      extraLines.push(dict.calculator.costPerUnitLine(unitLabels[primary.unit][locale], `$${formatUsdCurrency(pricePerDetectedUnit)}`));
+    } else if (parsed.pricePerUnit) {
+      const { rate, unit: rateUnit } = parsed.pricePerUnit;
+      let priceForLine = rate;
+      let unitForLine = rateUnit;
+      if (primary.unit !== rateUnit) {
+        // Convert the stated rate into the detected area's unit so the line
+        // stays consistent with the "Detected" line above it.
+        priceForLine = (rate * conversionFactors[primary.unit]) / conversionFactors[rateUnit];
+        unitForLine = primary.unit;
+      }
+      extraLines.push(dict.calculator.costPerUnitLine(unitLabels[unitForLine][locale], `$${formatUsdCurrency(priceForLine)}`));
+    }
+
+    setDetectedExtraLines(extraLines);
 
     if (parsed.totalPrice) {
       setPrice(String(parsed.totalPrice));
@@ -92,7 +166,6 @@ export default function Calculator({ locale }: { locale: Locale }) {
       // No total was stated, just a rate ("$45/v2") — back it out into an
       // equivalent total so the price-per-unit table below still works for
       // every unit, not just the one the rate happened to be quoted in.
-      const baseValueInMeters = primary.value * conversionFactors[primary.unit];
       const equivalentTotal = parsed.pricePerUnit.rate * (baseValueInMeters / conversionFactors[parsed.pricePerUnit.unit]);
       setPrice(String(equivalentTotal));
     }
@@ -124,7 +197,11 @@ export default function Calculator({ locale }: { locale: Locale }) {
         {detectedMessage && (
           <div className="mt-4 rounded-lg bg-surface-muted px-4 py-3 text-sm">
             <p className="font-medium text-foreground">{detectedMessage}</p>
-            {detectedNote && <p className="mt-1 text-foreground-muted">{detectedNote}</p>}
+            {detectedExtraLines.map((line, i) => (
+              <p key={i} className="mt-1 text-foreground-muted">
+                {line}
+              </p>
+            ))}
           </div>
         )}
       </div>
@@ -137,11 +214,9 @@ export default function Calculator({ locale }: { locale: Locale }) {
               <label className="mb-1 block text-xs font-medium text-foreground-muted">
                 {dict.calculator.inputLabel}
               </label>
-              <input
-                type="number"
-                inputMode="decimal"
+              <NumberField
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                onChange={setAmount}
                 className="w-full rounded-lg border border-border bg-background px-4 py-3 text-lg font-semibold outline-none focus:border-primary"
               />
             </div>
@@ -183,11 +258,9 @@ export default function Calculator({ locale }: { locale: Locale }) {
           </label>
           <div className="flex items-center rounded-lg border border-border bg-background px-4 focus-within:border-primary">
             <span className="text-foreground-muted">$</span>
-            <input
-              type="number"
-              inputMode="decimal"
+            <NumberField
               value={price}
-              onChange={(e) => setPrice(e.target.value)}
+              onChange={setPrice}
               className="w-full bg-transparent px-2 py-3 text-lg font-semibold outline-none"
             />
           </div>
