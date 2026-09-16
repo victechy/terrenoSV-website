@@ -36,6 +36,23 @@ npm run lint
 
 ## Deploying (Cloudflare Pages)
 
+**Automated**: `.github/workflows/deploy.yml` rebuilds and redeploys
+automatically every 6 hours, on every push to `main`, and via manual
+"Run workflow" on the repo's [Actions
+tab](https://github.com/victechy/terrenoSV-website/actions/workflows/deploy.yml).
+It authenticates to Cloudflare using `CLOUDFLARE_API_TOKEN` and
+`CLOUDFLARE_ACCOUNT_ID`, stored as GitHub repo secrets (Settings → Secrets
+and variables → Actions). The scheduled run is what picks up newly approved
+listings from the Google Sheet and gives them their own pre-rendered SEO
+page, since `/listings` itself already stays live via a client-side re-fetch
+regardless of deploy cadence.
+
+The workflow requires **Node 22+** in its `actions/setup-node` step —
+wrangler 4.132.0 hard-requires it and fails immediately on Node 20.
+
+**Manual fallback** (same commands the workflow runs), e.g. to publish sooner
+than the next scheduled run without pushing a commit:
+
 ```
 npm run build
 npx wrangler pages deploy out --project-name=terrenosv --branch=main
@@ -56,11 +73,6 @@ OpenNext/Workers SSR deployment, the wrong architecture for this project
 (`git checkout -- next.config.ts package.json .gitignore package-lock.json`,
 delete any new `open-next.config.ts` / `wrangler.jsonc` / `public/_headers`),
 then re-run the same command with `--force` appended to skip the migration.
-
-Because listings are baked in at build time, **redeploy periodically** to
-pick up newly approved listings in the pre-rendered pages and the homepage's
-featured snapshot. The client-side refresh in `ListingsBrowser` keeps
-`/listings` itself live between deploys regardless.
 
 ## Project structure
 
