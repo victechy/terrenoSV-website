@@ -1,36 +1,56 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# terrenoSV website
 
-## Getting Started
+Marketing + live listings site for terrenoSV (land & property in El Salvador),
+built as a companion to the terrenoSV app and the *Moving to El Salvador* book.
 
-First, run the development server:
+## Stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **Next.js (App Router) + TypeScript + Tailwind CSS v4**
+- **Static export** (`output: "export"` in `next.config.ts`) — builds to plain
+  HTML/CSS/JS in `/out`, deployable directly to IONOS shared hosting via FTP.
+  No server required. To later upgrade to full server rendering (real-time
+  SSR, ISR, API routes), remove `output: "export"` and deploy to
+  Vercel/Netlify instead — same codebase, no rewrite.
+- **Data**: listings are read live from the same public Google Sheet the app
+  reads (`src/lib/listings.ts`), fetched both at build time (for SEO — every
+  listing gets its own pre-rendered page) and again client-side on page load
+  (for freshness between rebuilds).
+- **Favorites**: per-device, stored in `localStorage` (mirrors the app's
+  AsyncStorage-backed favorites). Liking/unliking also posts to the same
+  Google Apps Script endpoint the app uses (`src/lib/likes.ts`), so a like
+  from the web and the app land in the same `Likes` column.
+- **i18n**: English at the root (`/`, `/listings`, ...), Spanish mirrored
+  under `/es` (`/es`, `/es/listings`, ...). No middleware — static export
+  can't run one — so locale switching is just linking to the other prefix.
+  See `src/lib/dictionary.ts`.
+
+## Development
+
+```
+npm run dev      # http://localhost:3000
+npm run build     # builds static site to /out
+npm run lint
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Deploying to IONOS
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. `npm run build`
+2. Upload the contents of `/out` (not the `out` folder itself — its
+   contents) to your IONOS hosting root (usually the directory that serves
+   terrenosv.org) via FTP/SFTP or IONOS's file manager.
+3. Because listings are baked in at build time, **re-run the build and
+   re-upload periodically** (or wire up a scheduled CI job) to pick up newly
+   approved listings in the pre-rendered pages — the client-side refresh in
+   `ListingsBrowser` covers freshness between rebuilds, but individual
+   listing detail pages (and their SEO metadata) only regenerate on rebuild.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Project structure
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+src/app/(en)/...     English routes (unprefixed)
+src/app/es/...        Spanish routes (mirrors (en) 1:1)
+src/components/        Shared UI (Header, Footer, ListingCard, Calculator, ...)
+src/components/views/  Full-page views shared by both locale route trees
+src/lib/                Data layer: CSV parsing, listings mapping, area
+                        conversion, i18n dictionary, favorites/likes
+```
