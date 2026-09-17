@@ -11,7 +11,12 @@ export default function Footer({ locale }: { locale: Locale }) {
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
         <div className="flex flex-col gap-8 sm:flex-row sm:justify-between">
           <div className="max-w-sm">
-            <Image src="/wordmark.png" alt="terrenoSV" width={140} height={39} unoptimized className="h-7 w-auto" />
+            <div className="flex items-center gap-2">
+              <Image src="/icon-nav.png" alt="" width={32} height={32} unoptimized className="h-7 w-7" />
+              <span className="font-brand text-xl text-white">
+                terreno<span className="text-accent">SV</span>
+              </span>
+            </div>
             <p className="mt-3 text-sm text-white/70">{dict.footer.tagline}</p>
           </div>
 

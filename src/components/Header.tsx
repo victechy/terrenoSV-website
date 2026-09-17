@@ -24,10 +24,13 @@ export default function Header({ locale }: { locale: Locale }) {
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
         <Link
           href={localizedPath("/", locale)}
-          className="flex items-center shrink-0"
+          className="flex items-center gap-2 shrink-0"
           onClick={() => setOpen(false)}
         >
-          <Image src="/wordmark.png" alt="terrenoSV" width={168} height={47} unoptimized className="h-8 w-auto sm:h-9" priority />
+          <Image src="/icon-nav.png" alt="" width={40} height={40} unoptimized className="h-8 w-8 sm:h-9 sm:w-9" priority />
+          <span className="font-brand text-2xl leading-none text-white">
+            terreno<span className="text-accent">SV</span>
+          </span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-6">
