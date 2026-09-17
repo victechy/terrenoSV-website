@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { OwnerListing, SellerStatus, fetchOwnerListings } from "@/lib/listings";
+import { fetchAgents } from "@/lib/agents";
 import { formatUsdCurrency } from "@/lib/converter";
 import {
   clearPortalToken,
@@ -14,10 +15,16 @@ import {
   updateListingStatus,
   verifyPortalToken,
 } from "@/lib/portal";
+import ShareButton from "../ShareButton";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type Phase = "loading" | "login" | "link-sent" | "dashboard";
+
+function firstNameFrom(listings: OwnerListing[]): string | null {
+  const fullName = listings.find((l) => l.sellerName.trim())?.sellerName.trim();
+  return fullName ? fullName.split(/\s+/)[0] : null;
+}
 
 export default function PortalView() {
   const router = useRouter();
@@ -31,6 +38,7 @@ export default function PortalView() {
   const [listings, setListings] = useState<OwnerListing[]>([]);
   const [listError, setListError] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [agentSlug, setAgentSlug] = useState<string | null>(null);
 
   useEffect(() => {
     // Deliberate: resolving auth state from localStorage/the URL is a
@@ -60,6 +68,14 @@ export default function PortalView() {
         .then((rows) => setListings(rows))
         .catch(() => setListError("No pudimos cargar tus publicaciones. Intenta de nuevo."))
         .finally(() => setPhase("dashboard"));
+      // Best-effort: no public agent page yet just means the "share" tab
+      // shows its own explanatory empty state instead of a link.
+      fetchAgents()
+        .then((agents) => {
+          const match = agents.find((a) => a.email === res.email);
+          if (match) setAgentSlug(match.slug);
+        })
+        .catch(() => {});
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -109,6 +125,7 @@ export default function PortalView() {
   return (
     <Dashboard
       email={sessionEmail!}
+      firstName={firstNameFrom(listings)}
       token={token!}
       listings={listings}
       listError={listError}
@@ -116,6 +133,7 @@ export default function PortalView() {
       setExpandedId={setExpandedId}
       onStatusChange={handleStatusChange}
       onLogout={handleLogout}
+      agentSlug={agentSlug}
     />
   );
 }
@@ -198,8 +216,11 @@ function canChangeStatus(listing: OwnerListing): boolean {
   return listing.sellerStatus === "Active" || listing.sellerStatus === "Pending Sale";
 }
 
+type Tab = "listings" | "share";
+
 function Dashboard({
   email,
+  firstName,
   token,
   listings,
   listError,
@@ -207,8 +228,10 @@ function Dashboard({
   setExpandedId,
   onStatusChange,
   onLogout,
+  agentSlug,
 }: {
   email: string;
+  firstName: string | null;
   token: string;
   listings: OwnerListing[];
   listError: string | null;
@@ -216,12 +239,17 @@ function Dashboard({
   setExpandedId: (id: string | null) => void;
   onStatusChange: (id: string, status: Exclude<SellerStatus, "Active">) => void;
   onLogout: () => void;
+  agentSlug: string | null;
 }) {
+  const [tab, setTab] = useState<Tab>("listings");
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-extrabold tracking-tight text-foreground">Mis publicaciones</h1>
+          <h1 className="text-xl font-extrabold tracking-tight text-foreground">
+            {firstName ? `¡Hola, ${firstName}!` : "¡Hola!"}
+          </h1>
           <p className="mt-0.5 text-sm text-foreground-muted">{email}</p>
         </div>
         <button
@@ -233,25 +261,90 @@ function Dashboard({
         </button>
       </div>
 
-      {listError && <p className="mt-6 text-sm text-red-600">{listError}</p>}
+      <div className="mt-6 flex gap-2 border-b border-border">
+        <TabButton active={tab === "listings"} onClick={() => setTab("listings")}>
+          Mis publicaciones
+        </TabButton>
+        <TabButton active={tab === "share"} onClick={() => setTab("share")}>
+          Compartir mis publicaciones
+        </TabButton>
+      </div>
 
-      {!listError && listings.length === 0 && (
-        <p className="mt-10 text-center text-sm text-foreground-muted">
-          No encontramos publicaciones con este correo.
-        </p>
+      {tab === "listings" ? (
+        <>
+          {listError && <p className="mt-6 text-sm text-red-600">{listError}</p>}
+
+          {!listError && listings.length === 0 && (
+            <p className="mt-10 text-center text-sm text-foreground-muted">
+              No encontramos publicaciones con este correo.
+            </p>
+          )}
+
+          <div className="mt-6 flex flex-col gap-3">
+            {listings.map((listing) => (
+              <ListingRow
+                key={listing.id}
+                listing={listing}
+                token={token}
+                expanded={expandedId === listing.id}
+                onToggle={() => setExpandedId(expandedId === listing.id ? null : listing.id)}
+                onStatusChange={onStatusChange}
+              />
+            ))}
+          </div>
+        </>
+      ) : (
+        <ShareTab agentSlug={agentSlug} />
       )}
+    </div>
+  );
+}
 
-      <div className="mt-6 flex flex-col gap-3">
-        {listings.map((listing) => (
-          <ListingRow
-            key={listing.id}
-            listing={listing}
-            token={token}
-            expanded={expandedId === listing.id}
-            onToggle={() => setExpandedId(expandedId === listing.id ? null : listing.id)}
-            onStatusChange={onStatusChange}
-          />
-        ))}
+function TabButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`-mb-px border-b-2 px-1 py-3 text-sm font-semibold transition-colors ${
+        active ? "border-primary text-primary" : "border-transparent text-foreground-muted hover:text-foreground"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function ShareTab({ agentSlug }: { agentSlug: string | null }) {
+  if (!agentSlug) {
+    return (
+      <div className="mt-6 rounded-xl bg-surface p-6 text-sm text-foreground-muted shadow-panel">
+        Tu página pública para compartir tus publicaciones aún no está activada. Contáctanos para activarla.
+      </div>
+    );
+  }
+
+  const url = `https://terrenosv.org/es/agent/${agentSlug}`;
+
+  return (
+    <div className="mt-6 rounded-xl bg-surface p-6 shadow-panel">
+      <h2 className="font-semibold text-foreground">Tu página de publicaciones</h2>
+      <p className="mt-1 text-sm text-foreground-muted">
+        Comparte este enlace con tus clientes. Muestra todas tus publicaciones activas, con la opción de ver
+        más propiedades o usar la calculadora al final.
+      </p>
+      <p className="mt-4 truncate rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground-muted">
+        {url}
+      </p>
+      <div className="mt-4">
+        <ShareButton text="Mira mis publicaciones en terrenoSV" url={url} locale="es" />
       </div>
     </div>
   );

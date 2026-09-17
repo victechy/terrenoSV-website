@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { fetchListings } from "@/lib/listings";
+import { fetchAgents } from "@/lib/agents";
 
 export const dynamic = "force-static";
 
@@ -8,6 +9,7 @@ const STATIC_PATHS = ["", "/listings", "/calculator", "/book", "/about", "/gloss
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const listings = await fetchListings().catch(() => []);
+  const agents = await fetchAgents().catch(() => []);
 
   const staticEntries: MetadataRoute.Sitemap = STATIC_PATHS.flatMap((path) => [
     { url: `${BASE_URL}${path}`, changeFrequency: "daily" as const, priority: path === "" ? 1 : 0.8 },
@@ -19,5 +21,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/es/listings/${l.slug}`, changeFrequency: "weekly" as const, priority: 0.6 },
   ]);
 
-  return [...staticEntries, ...listingEntries];
+  const agentEntries: MetadataRoute.Sitemap = agents.flatMap((a) => [
+    { url: `${BASE_URL}/agent/${a.slug}`, changeFrequency: "weekly" as const, priority: 0.5 },
+    { url: `${BASE_URL}/es/agent/${a.slug}`, changeFrequency: "weekly" as const, priority: 0.5 },
+  ]);
+
+  return [...staticEntries, ...listingEntries, ...agentEntries];
 }

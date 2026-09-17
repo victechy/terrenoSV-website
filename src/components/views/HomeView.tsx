@@ -3,7 +3,6 @@ import Link from "next/link";
 import { Listing } from "@/lib/listings";
 import { Locale, getDictionary, localizedPath } from "@/lib/dictionary";
 import ListingsTeaser from "../ListingsTeaser";
-import CalculatorGlimpse from "../CalculatorGlimpse";
 import NotifyForm from "../NotifyForm";
 
 export default function HomeView({ locale, featured }: { locale: Locale; featured: Listing[] }) {
@@ -42,17 +41,8 @@ export default function HomeView({ locale, featured }: { locale: Locale; feature
         </div>
       </section>
 
-      {/* Calculator glimpse — the app's own flagship feature, leads the homepage same as the app's own onboarding does.
-          Functional, not decorative: pasting here and hitting Calculate carries the text through to the full
-          calculator page via a query param, same "small taste, then the real page" pattern as the listings teaser below. */}
-      <section className="mx-auto max-w-2xl px-4 py-16 text-center sm:px-6">
-        <div className="rounded-xl bg-surface p-8 shadow-panel">
-          <CalculatorGlimpse locale={locale} />
-        </div>
-      </section>
-
-      {/* Featured listings — a glimpse, same pattern as the calculator: full experience lives on /listings */}
-      <section className="border-t border-border bg-surface-muted/40">
+      {/* Featured listings — a glimpse of the full experience, which lives on /listings */}
+      <section className="bg-surface-muted/40">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
           <ListingsTeaser
             locale={locale}

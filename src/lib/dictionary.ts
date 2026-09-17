@@ -49,9 +49,6 @@ export const dictionary = {
       bookPromoBody:
         "The guidebook behind terrenoSV: practical, first-hand advice on relocating, buying land, and settling in El Salvador.",
       bookPromoCta: "Learn about the book",
-      calcGlimpseTitle: "Paste any listing. Get the math instantly.",
-      calcGlimpseBody: "We calculate the price per unit, and convert the size to feet² and acres.",
-      calcGlimpseCta: "Calculate",
       sellPromoTitle: "List with terrenoSV",
       sellPromoBody: "A vetted marketplace for real estate professionals with land to sell in El Salvador.",
       sellPromoCta: "Apply to list",
@@ -98,6 +95,15 @@ export const dictionary = {
       contactMessage: (title: string) => `Hi, I'm interested in "${title}" on terrenoSV.`,
       share: "Share",
       linkCopied: "Link copied",
+    },
+    agent: {
+      subtitle: "Real estate agent on terrenoSV",
+      listingsCount: (n: number) => `${n} active ${n === 1 ? "listing" : "listings"}`,
+      noListings: "This agent has no active listings right now.",
+      viewMoreTitle: "Looking for more?",
+      viewMoreBody: "Browse every verified listing on terrenoSV, or convert land units with our calculator.",
+      viewMoreCta: "Browse all listings",
+      calculatorCta: "Try the land calculator",
     },
     calculator: {
       title: "Salvadoran land unit calculator",
@@ -282,9 +288,6 @@ export const dictionary = {
       bookPromoBody:
         "La guía detrás de terrenoSV: consejos prácticos y de primera mano para mudarte, comprar terreno y establecerte en El Salvador.",
       bookPromoCta: "Conocer el libro",
-      calcGlimpseTitle: "Pega cualquier anuncio. La cuenta al instante.",
-      calcGlimpseBody: "Calculamos el precio por unidad y convertimos el tamaño a pies² y acres.",
-      calcGlimpseCta: "Calcular",
       sellPromoTitle: "Publica con terrenoSV",
       sellPromoBody: "Un mercado verificado para profesionales inmobiliarios con terreno para vender en El Salvador.",
       sellPromoCta: "Aplicar para publicar",
@@ -331,6 +334,15 @@ export const dictionary = {
       contactMessage: (title: string) => `Hola, me interesa "${title}" en terrenoSV.`,
       share: "Compartir",
       linkCopied: "Enlace copiado",
+    },
+    agent: {
+      subtitle: "Agente de bienes raíces en terrenoSV",
+      listingsCount: (n: number) => `${n} ${n === 1 ? "publicación activa" : "publicaciones activas"}`,
+      noListings: "Este agente no tiene publicaciones activas en este momento.",
+      viewMoreTitle: "¿Buscas más opciones?",
+      viewMoreBody: "Explora todas las propiedades verificadas en terrenoSV, o convierte medidas de terreno con nuestra calculadora.",
+      viewMoreCta: "Ver todas las publicaciones",
+      calculatorCta: "Probar la calculadora",
     },
     calculator: {
       title: "Calculadora de medidas salvadoreñas",

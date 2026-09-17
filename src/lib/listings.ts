@@ -294,6 +294,7 @@ export type OwnerListing = {
   municipality: string;
   publishedStatus: string;
   sellerStatus: SellerStatus;
+  sellerName: string;
 };
 
 function mapRowForOwner(row: Record<string, string>): OwnerListing | null {
@@ -317,6 +318,7 @@ function mapRowForOwner(row: Record<string, string>): OwnerListing | null {
     department: row["Departamento"] || "",
     municipality: row["Municipio / Distrito"] || "",
     publishedStatus: row["Published Status"] || "",
+    sellerName: row["Tu nombre completo"] || "",
     sellerStatus: (["Pending Sale", "Sold", "Removed"] as const).includes(
       rawSellerStatus as "Pending Sale" | "Sold" | "Removed"
     )
