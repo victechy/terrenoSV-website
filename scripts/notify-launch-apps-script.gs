@@ -86,15 +86,18 @@ function doPost(e) {
 
     // Best-effort: a failed send shouldn't undo the signup that already
     // succeeded above, so this is deliberately isolated from the outer catch.
+    var mailError = null;
     try {
       const locale = body.locale === 'es' ? 'es' : 'en';
       const copy = CONFIRMATION_COPY[locale];
       GmailApp.sendEmail(email, copy.subject, copy.body, { from: FROM_ALIAS, name: 'terrenoSV' });
     } catch (mailErr) {
-      // swallow — subscription itself still succeeded
+      // TEMPORARY: surfaced in the response so we can see the real failure
+      // instead of guessing. Revert to silently swallowing once this works.
+      mailError = mailErr.message;
     }
 
-    return jsonResponse({ success: true });
+    return jsonResponse({ success: true, mailError: mailError });
   } catch (err) {
     return jsonResponse({ success: false, error: err.message });
   } finally {
