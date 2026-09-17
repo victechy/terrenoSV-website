@@ -105,6 +105,16 @@ function doPost(e) {
   }
 }
 
+// TEMPORARY — run this ONCE manually from the Apps Script editor (function
+// dropdown next to Run > select authorizeGmailAccess > Run), then approve
+// the permission prompt it triggers. That's what actually grants the script
+// the broader Gmail scope GmailApp.sendEmail needs — a redeployed Web App
+// doesn't get re-prompted for expanded scopes on its own. Safe to delete
+// this function afterward.
+function authorizeGmailAccess() {
+  GmailApp.sendEmail(Session.getActiveUser().getEmail(), 'terrenoSV script authorized', 'This confirms Apps Script can now send as your Gmail aliases.');
+}
+
 function doGet(e) {
   return jsonResponse({ status: 'terrenoSV notify-launch endpoint is running' });
 }
