@@ -4,9 +4,7 @@ import { csvToRecords } from "./csv";
 // A small admin-maintained allow-list: one row per approved realtor. Doubles
 // as the auto-publish allow-list (see scripts/auto-publish-apps-script.gs) —
 // same underlying "who do I trust" list, read two different ways.
-// PLACEHOLDER: replace after creating the sheet (see that script's setup
-// comment for the exact columns).
-const AGENTS_SHEET_ID = "REPLACE_WITH_AGENTS_SHEET_ID";
+const AGENTS_SHEET_ID = "19pUngke0awIXhpgYHl80uKF7AS97Xv4DcgqTCMPtrFU";
 export const AGENTS_CSV_URL = `https://docs.google.com/spreadsheets/d/${AGENTS_SHEET_ID}/export?format=csv`;
 
 export type Agent = {
