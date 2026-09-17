@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import { AreaUnit, conversionFactors, formatAreaNumber, formatUsdCurrency, unitLabels } from "@/lib/converter";
 import { Locale, getDictionary } from "@/lib/dictionary";
 import { deriveAreaResult, parseListingText } from "@/lib/listingParser";
@@ -82,8 +83,8 @@ export default function Calculator({ locale }: { locale: Locale }) {
   // fills in the manual fields below with whatever it finds — dimensions,
   // total area, or a construction size — instead of duplicating a second
   // results table just for pasted listings.
-  const handleParseListing = () => {
-    const parsed = parseListingText(pasteText);
+  const handleParseListing = (textOverride?: string) => {
+    const parsed = parseListingText(textOverride ?? pasteText);
     const { land, construction, usedConstructionAsPrimary } = deriveAreaResult(parsed);
     const primary = land || (usedConstructionAsPrimary ? construction : null);
 
@@ -171,6 +172,21 @@ export default function Calculator({ locale }: { locale: Locale }) {
     }
   };
 
+  // Lets the homepage's calculator glimpse hand off a pasted listing: it
+  // navigates here with ?paste=<text>, and this runs the same parse
+  // automatically so the visitor lands straight on their result.
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    const paste = searchParams.get("paste");
+    if (!paste) return;
+    // Deliberate: syncing local state from the URL on arrival, a one-time
+    // hydration from an external source, not a value derivable from props/state.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPasteText(paste);
+    handleParseListing(paste);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
   return (
     <div>
       <div className="mb-6 rounded-2xl border border-border bg-surface p-6">
@@ -187,7 +203,7 @@ export default function Calculator({ locale }: { locale: Locale }) {
 
         <button
           type="button"
-          onClick={handleParseListing}
+          onClick={() => handleParseListing()}
           disabled={!pasteText.trim()}
           className="mt-3 rounded-full bg-accent-warm px-5 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
         >

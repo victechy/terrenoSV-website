@@ -2,10 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { Listing } from "@/lib/listings";
 import { Locale, getDictionary, localizedPath } from "@/lib/dictionary";
-import { convert, formatAreaNumber, unitLabels } from "@/lib/converter";
-import ListingCard from "../ListingCard";
-
-const GLIMPSE_UNITS = ["varas2", "meters2", "acres"] as const;
+import ListingsTeaser from "../ListingsTeaser";
+import CalculatorGlimpse from "../CalculatorGlimpse";
 
 export default function HomeView({ locale, featured }: { locale: Locale; featured: Listing[] }) {
   const dict = getDictionary(locale);
@@ -47,67 +45,25 @@ export default function HomeView({ locale, featured }: { locale: Locale; feature
         />
       </section>
 
-      {/* Calculator glimpse — the app's own flagship feature, leads the homepage same as the app's own onboarding does */}
-      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-        <div className="grid gap-8 lg:grid-cols-2 lg:items-center">
-          <div>
-            <h2 className="text-2xl font-bold text-foreground">{dict.home.calcGlimpseTitle}</h2>
-            <p className="mt-3 text-foreground-muted">{dict.home.calcGlimpseBody}</p>
-            <Link
-              href={localizedPath("/calculator", locale)}
-              className="mt-6 inline-block rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white hover:bg-primary-hover"
-            >
-              {dict.home.calcGlimpseCta}
-            </Link>
-          </div>
-          <div className="rounded-2xl border border-border bg-surface p-6">
-            <p className="text-sm font-medium text-foreground-muted">{dict.home.calcGlimpseExample}</p>
-            <ul className="mt-3 divide-y divide-border">
-              {GLIMPSE_UNITS.map((unit) => (
-                <li key={unit} className="flex items-center justify-between py-2.5">
-                  <span className="text-sm text-foreground-muted">{unitLabels[unit][locale]}</span>
-                  <span className="font-mono text-sm font-semibold text-foreground">
-                    {formatAreaNumber(convert(1, "manzanas", unit))}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
+      {/* Calculator glimpse — the app's own flagship feature, leads the homepage same as the app's own onboarding does.
+          Functional, not decorative: pasting here and hitting Calculate carries the text through to the full
+          calculator page via a query param, same "small taste, then the real page" pattern as the listings teaser below. */}
+      <section className="mx-auto max-w-2xl px-4 py-16 text-center sm:px-6">
+        <CalculatorGlimpse locale={locale} />
       </section>
 
       {/* Featured listings — a glimpse, same pattern as the calculator: full experience lives on /listings */}
       <section className="border-t border-border bg-surface">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-          <div className="flex items-end justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-foreground">{dict.home.featuredTitle}</h2>
-              <p className="mt-1 text-foreground-muted">{dict.home.featuredSubtitle}</p>
-            </div>
-            <Link
-              href={localizedPath("/listings", locale)}
-              className="hidden text-sm font-semibold text-primary hover:underline sm:block"
-            >
-              {dict.home.viewAll} →
-            </Link>
-          </div>
-
-          {featured.length === 0 ? (
-            <p className="mt-10 text-foreground-muted">{dict.home.noListings}</p>
-          ) : (
-            <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {featured.slice(0, 3).map((listing) => (
-                <ListingCard key={listing.id} listing={listing} locale={locale} />
-              ))}
-            </div>
-          )}
-
-          <Link
-            href={localizedPath("/listings", locale)}
-            className="mt-8 block text-center text-sm font-semibold text-primary hover:underline sm:hidden"
-          >
-            {dict.home.viewAll} →
-          </Link>
+          <ListingsTeaser
+            locale={locale}
+            listings={featured}
+            title={dict.home.featuredTitle}
+            subtitle={dict.home.featuredSubtitle}
+            viewAllLabel={dict.home.viewAll}
+            noListingsLabel={dict.home.noListings}
+            count={3}
+          />
         </div>
       </section>
 
