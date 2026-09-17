@@ -193,8 +193,16 @@ function slugify(title: string, timestamp: string): string {
   return `${base || "propiedad"}-${suffix}`;
 }
 
+const CONTACT_EMAIL_COL = "Correo electrónico de contacto (el que verán los compradores)";
+
 function mapRow(row: Record<string, string>): Listing | null {
   if (row["Published Status"] !== "Yes") return null;
+
+  // A blank/"Active" Seller Status means the seller hasn't touched it — still
+  // live. Anything else ("Pending Sale" / "Sold" / "Removed", set from the
+  // seller portal) hides it from the public site, same as an unpublished row.
+  const sellerStatus = (row["Seller Status"] || "").trim();
+  if (sellerStatus && sellerStatus !== "Active") return null;
 
   const timestamp = row["Timestamp"];
   const title = row["Título de la propiedad"];
@@ -222,7 +230,7 @@ function mapRow(row: Record<string, string>): Listing | null {
     parking: parseInt(row["🚗Parqueos"], 10) || null,
     price: price && price > 0 ? price : null,
     sellerName: row["Tu nombre completo"] || "",
-    contactEmail: row["Correo electrónico de contacto (el que verán los compradores)"] || "",
+    contactEmail: row[CONTACT_EMAIL_COL] || "",
     contactPhone: row["Número de teléfono/WhatsApp"] || "",
     contactPreference: row["¿Cómo prefieres que te contacten?"] || "",
     likes: parseInt(row["Likes"], 10) || 0,
@@ -271,3 +279,68 @@ export const fetchListings = cache(async (): Promise<Listing[]> => {
   }
   throw lastError;
 });
+
+export type SellerStatus = "Active" | "Pending Sale" | "Sold" | "Removed";
+
+export type OwnerListing = {
+  id: string;
+  slug: string;
+  title: string;
+  photo: string | null;
+  price: number | null;
+  propertyType: string;
+  transaction: string;
+  department: string;
+  municipality: string;
+  publishedStatus: string;
+  sellerStatus: SellerStatus;
+};
+
+function mapRowForOwner(row: Record<string, string>): OwnerListing | null {
+  const timestamp = row["Timestamp"];
+  const title = row["Título de la propiedad"];
+  if (!timestamp || !title) return null;
+
+  const priceRaw = row["Precio (USD)"];
+  const price = priceRaw ? parseFloat(String(priceRaw).replace(/[^0-9.]/g, "")) : null;
+  const photos = getImageUrls(row["Fotos de la propiedad (hasta 5)"]);
+  const rawSellerStatus = (row["Seller Status"] || "").trim();
+
+  return {
+    id: timestamp,
+    slug: slugify(title, timestamp),
+    title,
+    photo: photos[0] ?? null,
+    price: price && price > 0 ? price : null,
+    propertyType: row["Tipo de propiedad"] || "",
+    transaction: row["¿Qué deseas hacer con esta propiedad?"] || "Venta",
+    department: row["Departamento"] || "",
+    municipality: row["Municipio / Distrito"] || "",
+    publishedStatus: row["Published Status"] || "",
+    sellerStatus: (["Pending Sale", "Sold", "Removed"] as const).includes(
+      rawSellerStatus as "Pending Sale" | "Sold" | "Removed"
+    )
+      ? (rawSellerStatus as SellerStatus)
+      : "Active",
+  };
+}
+
+// Powers the seller portal (src/app/portal). Deliberately bypasses the
+// Published Status / Seller Status filtering mapRow applies — a seller needs
+// to see their own pending-approval and already-removed listings too, not
+// just the ones currently live on the public site. Safe to read every row
+// client-side: the sheet's CSV export is already public (see SHEET_CSV_URL),
+// this just filters to one seller's rows by contact email after the fact.
+export async function fetchOwnerListings(email: string): Promise<OwnerListing[]> {
+  const res = await fetch(`${SHEET_CSV_URL}&t=${Date.now()}`);
+  if (!res.ok) throw new Error(`Sheet fetch failed: ${res.status}`);
+  const csvText = await res.text();
+  const records = csvToRecords(csvText);
+  const normalized = email.trim().toLowerCase();
+
+  return records
+    .filter((row) => (row[CONTACT_EMAIL_COL] || "").trim().toLowerCase() === normalized)
+    .map(mapRowForOwner)
+    .filter((l): l is OwnerListing => l !== null)
+    .reverse();
+}
