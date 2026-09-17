@@ -21,7 +21,7 @@ export default function NotifyForm({ locale }: { locale: Locale }) {
       return;
     }
     setStatus("loading");
-    const result = await subscribeToLaunch(email.trim(), honeypot);
+    const result = await subscribeToLaunch(email.trim(), honeypot, locale);
     if (!result.success) {
       setStatus("error");
     } else if (result.alreadySubscribed) {
