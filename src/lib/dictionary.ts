@@ -39,7 +39,12 @@ export const dictionary = {
       appPromoTitle: "The terrenoSV app is coming soon",
       appPromoBody:
         "Everything on this site, in your pocket: browse listings offline, save favorites, and get notified about new land near you.",
-      appPromoCta: "Get notified at launch",
+      notifyPlaceholder: "you@email.com",
+      notifyButton: "Notify me",
+      notifySuccess: "You're on the list!",
+      notifyAlready: "You're already on the list.",
+      notifyInvalid: "Enter a valid email address.",
+      notifyError: "Something went wrong. Please try again.",
       bookPromoTitle: "Moving to El Salvador",
       bookPromoBody:
         "The guidebook behind terrenoSV: practical, first-hand advice on relocating, buying land, and settling in El Salvador.",
@@ -267,7 +272,12 @@ export const dictionary = {
       appPromoTitle: "La app terrenoSV llega pronto",
       appPromoBody:
         "Todo este sitio, en tu bolsillo: explora propiedades sin conexión, guarda tus favoritas y recibe alertas de terrenos cerca de ti.",
-      appPromoCta: "Avísenme cuando esté lista",
+      notifyPlaceholder: "tu@correo.com",
+      notifyButton: "Avisarme",
+      notifySuccess: "¡Ya estás en la lista!",
+      notifyAlready: "Ya estás en la lista.",
+      notifyInvalid: "Ingresa un correo válido.",
+      notifyError: "Algo salió mal. Intenta de nuevo.",
       bookPromoTitle: "Moving to El Salvador",
       bookPromoBody:
         "La guía detrás de terrenoSV: consejos prácticos y de primera mano para mudarte, comprar terreno y establecerte en El Salvador.",

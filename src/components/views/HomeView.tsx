@@ -4,6 +4,7 @@ import { Listing } from "@/lib/listings";
 import { Locale, getDictionary, localizedPath } from "@/lib/dictionary";
 import ListingsTeaser from "../ListingsTeaser";
 import CalculatorGlimpse from "../CalculatorGlimpse";
+import NotifyForm from "../NotifyForm";
 
 export default function HomeView({ locale, featured }: { locale: Locale; featured: Listing[] }) {
   const dict = getDictionary(locale);
@@ -97,12 +98,7 @@ export default function HomeView({ locale, featured }: { locale: Locale; feature
           <div className="flex-1">
             <h2 className="text-2xl font-bold">{dict.home.appPromoTitle}</h2>
             <p className="mt-3 max-w-lg text-white/85">{dict.home.appPromoBody}</p>
-            <a
-              href="mailto:vflores.sv@gmail.com?subject=terrenoSV%20app%20launch"
-              className="mt-6 inline-block rounded-full bg-accent px-6 py-3 text-sm font-semibold text-[#1a202c] transition-transform hover:scale-105"
-            >
-              {dict.home.appPromoCta}
-            </a>
+            <NotifyForm locale={locale} />
           </div>
         </div>
       </section>
