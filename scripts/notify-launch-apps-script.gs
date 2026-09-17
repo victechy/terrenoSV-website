@@ -19,22 +19,30 @@
 const SHARED_SECRET = 'W5bbbYm9EVPNZUHgY6zQEaHCvpHWDSR';
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// Requires app@terrenosv.org to be set up as a verified Gmail "Send mail as"
+// alias on the account this script runs under (Cloudflare Email Routing
+// forwards that address to a real inbox; Gmail verifies the alias against
+// that inbox). Until that's done, GmailApp.sendEmail below will throw and
+// the catch around it will just silently skip sending — signups still work
+// either way, they just won't get the confirmation email yet.
+const FROM_ALIAS = 'app@terrenosv.org';
+
 // Sent once, right at signup — not just a receipt, this is what gets the
-// sender address (your Gmail) a first real interaction with each recipient
-// before the actual launch email goes out to the whole list at once. That
-// ask to whitelist only makes sense inside an email that already exists in
-// their inbox, which is exactly why it isn't on the website's success message.
+// sender address a first real interaction with each recipient before the
+// actual launch email goes out to the whole list at once. That ask to
+// whitelist only makes sense inside an email that already exists in their
+// inbox, which is exactly why it isn't on the website's success message.
 const CONFIRMATION_COPY = {
   en: {
     subject: "You're on the terrenoSV launch list",
     body: "Thanks for signing up! We'll email you the moment the terrenoSV app is live.\n\n" +
-      "One request: please add florespublishing@gmail.com to your contacts (or move this email out of Spam/Promotions if that's where it landed). That way our launch announcement actually reaches your inbox.\n\n" +
+      "One request: please add app@terrenosv.org to your contacts (or move this email out of Spam/Promotions if that's where it landed). That way our launch announcement actually reaches your inbox.\n\n" +
       "— terrenoSV",
   },
   es: {
     subject: "Ya estás en la lista de lanzamiento de terrenoSV",
     body: "¡Gracias por registrarte! Te avisaremos por correo en cuanto la app terrenoSV esté disponible.\n\n" +
-      "Un favor: agrega florespublishing@gmail.com a tus contactos (o mueve este correo fuera de Spam/Promociones si llegó ahí). Así nuestro anuncio de lanzamiento sí llegará a tu bandeja de entrada.\n\n" +
+      "Un favor: agrega app@terrenosv.org a tus contactos (o mueve este correo fuera de Spam/Promociones si llegó ahí). Así nuestro anuncio de lanzamiento sí llegará a tu bandeja de entrada.\n\n" +
       "— terrenoSV",
   },
 };
@@ -81,7 +89,7 @@ function doPost(e) {
     try {
       const locale = body.locale === 'es' ? 'es' : 'en';
       const copy = CONFIRMATION_COPY[locale];
-      MailApp.sendEmail(email, copy.subject, copy.body);
+      GmailApp.sendEmail(email, copy.subject, copy.body, { from: FROM_ALIAS, name: 'terrenoSV' });
     } catch (mailErr) {
       // swallow — subscription itself still succeeded
     }
