@@ -30,7 +30,7 @@ export default function ShareButton({ text, url, locale }: { text: string; url: 
     <button
       type="button"
       onClick={handleShare}
-      className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-semibold text-foreground-muted hover:border-primary hover:text-primary"
+      className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground-muted hover:border-primary hover:text-primary"
     >
       <ShareIcon />
       {copied ? dict.listingDetail.linkCopied : dict.listingDetail.share}

@@ -189,7 +189,7 @@ export default function Calculator({ locale }: { locale: Locale }) {
 
   return (
     <div>
-      <div className="mb-6 rounded-2xl border border-border bg-surface p-6">
+      <div className="mb-6 rounded-xl bg-surface p-6 shadow-panel">
         <h2 className="text-sm font-semibold text-foreground-muted">{dict.calculator.modePaste}</h2>
         <p className="mt-1 text-xs text-foreground-muted">{dict.calculator.pasteTitle}</p>
 
@@ -198,14 +198,14 @@ export default function Calculator({ locale }: { locale: Locale }) {
           onChange={(e) => setPasteText(e.target.value)}
           placeholder={dict.calculator.pastePlaceholder}
           rows={3}
-          className="mt-3 w-full resize-y rounded-lg border border-border bg-background px-4 py-3 text-sm outline-none focus:border-primary"
+          className="mt-3 w-full resize-y rounded-lg border border-border bg-background px-4 py-3 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/15"
         />
 
         <button
           type="button"
           onClick={() => handleParseListing()}
           disabled={!pasteText.trim()}
-          className="mt-3 rounded-full bg-accent-warm px-5 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+          className="mt-3 rounded-lg bg-accent-warm px-5 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
         >
           {dict.calculator.calculateButton}
         </button>
@@ -224,7 +224,7 @@ export default function Calculator({ locale }: { locale: Locale }) {
 
       <h2 className="mb-3 text-sm font-semibold text-foreground-muted">{dict.calculator.modeManual}</h2>
       <div className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-2xl border border-border bg-surface p-6">
+        <div className="rounded-xl bg-surface p-6 shadow-panel">
           <div className="grid grid-cols-[1fr_auto] gap-3">
             <div>
               <label className="mb-1 block text-xs font-medium text-foreground-muted">
@@ -233,7 +233,7 @@ export default function Calculator({ locale }: { locale: Locale }) {
               <NumberField
                 value={amount}
                 onChange={setAmount}
-                className="w-full rounded-lg border border-border bg-background px-4 py-3 text-lg font-semibold outline-none focus:border-primary"
+                className="w-full rounded-lg border border-border bg-background px-4 py-3 text-lg font-semibold outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/15"
               />
             </div>
             <div>
@@ -243,7 +243,7 @@ export default function Calculator({ locale }: { locale: Locale }) {
               <select
                 value={unit}
                 onChange={(e) => setUnit(e.target.value as AreaUnit)}
-                className="h-[50px] rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-primary"
+                className="h-[50px] cursor-pointer rounded-lg border border-border bg-background px-3 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/15"
               >
                 {ALL_UNITS.map((u) => (
                   <option key={u} value={u}>
@@ -265,14 +265,14 @@ export default function Calculator({ locale }: { locale: Locale }) {
           </ul>
         </div>
 
-        <div className="rounded-2xl border border-border bg-surface p-6">
+        <div className="rounded-xl bg-surface p-6 shadow-panel">
           <h3 className="text-sm font-semibold text-foreground-muted">{dict.calculator.priceCalcTitle}</h3>
           <p className="mt-1 text-sm text-foreground-muted">{dict.calculator.priceCalcSubtitle}</p>
 
           <label className="mt-4 mb-1 block text-xs font-medium text-foreground-muted">
             {dict.calculator.priceLabel}
           </label>
-          <div className="flex items-center rounded-lg border border-border bg-background px-4 focus-within:border-primary">
+          <div className="flex items-center rounded-lg border border-border bg-background px-4 transition-colors focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15">
             <span className="text-foreground-muted">$</span>
             <NumberField
               value={price}

@@ -23,6 +23,12 @@
      correct background to sit on regardless of light/dark theme. */
   --brand-blue: #003da5;
   --brand-blue-dark: #002d7a;
+
+  /* Elevation scale — soft, low-spread, cool-tinted shadows (listing-card /
+     marketplace style) rather than generic Tailwind gray shadows. */
+  --shadow-card: 0 1px 2px 0 rgba(15, 23, 42, 0.06), 0 1px 3px 0 rgba(15, 23, 42, 0.08);
+  --shadow-card-hover: 0 8px 20px -6px rgba(15, 23, 42, 0.18), 0 3px 8px -3px rgba(15, 23, 42, 0.1);
+  --shadow-panel: 0 1px 2px 0 rgba(15, 23, 42, 0.04), 0 2px 8px -2px rgba(15, 23, 42, 0.06);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -40,6 +46,9 @@
   --border: #475569;
   --border-strong: #475569;
   --shadow: rgba(0, 0, 0, 0.35);
+  --shadow-card: 0 1px 2px 0 rgba(0, 0, 0, 0.3), 0 1px 3px 0 rgba(0, 0, 0, 0.35);
+  --shadow-card-hover: 0 10px 24px -6px rgba(0, 0, 0, 0.55), 0 4px 10px -4px rgba(0, 0, 0, 0.4);
+  --shadow-panel: 0 1px 2px 0 rgba(0, 0, 0, 0.25), 0 2px 10px -2px rgba(0, 0, 0, 0.3);
 }
 }
 
@@ -60,6 +69,9 @@
   --color-brand-blue-dark: var(--brand-blue-dark);
   --font-sans: var(--font-inter);
   --font-brand: var(--font-permanent-marker);
+  --shadow-card: var(--shadow-card);
+  --shadow-card-hover: var(--shadow-card-hover);
+  --shadow-panel: var(--shadow-panel);
 }
 
 body {

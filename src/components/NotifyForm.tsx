@@ -33,7 +33,7 @@ export default function NotifyForm({ locale }: { locale: Locale }) {
 
   if (status === "success" || status === "already") {
     return (
-      <p className="mt-6 inline-block rounded-full bg-accent px-6 py-3 text-sm font-semibold text-[#1a202c]">
+      <p className="mt-6 inline-block rounded-lg bg-accent px-6 py-3 text-sm font-semibold text-[#1a202c]">
         {status === "success" ? dict.home.notifySuccess : dict.home.notifyAlready}
       </p>
     );
@@ -48,7 +48,7 @@ export default function NotifyForm({ locale }: { locale: Locale }) {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder={dict.home.notifyPlaceholder}
-          className="w-full max-w-xs rounded-full border border-white/30 bg-white/10 px-5 py-3 text-sm text-white placeholder:text-white/60 outline-none focus:border-white sm:w-64"
+          className="w-full max-w-xs rounded-lg border border-white/30 bg-white/10 px-5 py-3 text-sm text-white placeholder:text-white/60 outline-none focus:border-white sm:w-64"
         />
         {/* Honeypot: hidden from real visitors via CSS, invisible to screen
             readers via aria-hidden + tabIndex — a bot filling forms
@@ -65,7 +65,7 @@ export default function NotifyForm({ locale }: { locale: Locale }) {
         <button
           type="submit"
           disabled={status === "loading"}
-          className="rounded-full bg-accent px-6 py-3 text-sm font-semibold text-[#1a202c] transition-transform hover:scale-105 disabled:opacity-60"
+          className="rounded-lg bg-accent px-6 py-3 text-sm font-semibold text-[#1a202c] transition-transform hover:scale-105 disabled:opacity-60"
         >
           {dict.home.notifyButton}
         </button>

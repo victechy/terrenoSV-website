@@ -20,7 +20,7 @@ export default function Header({ locale }: { locale: Locale }) {
   const isActive = (href: string) => pathname === href || pathname === `${href}/`;
 
   return (
-    <header className="sticky top-0 z-40 bg-brand-blue">
+    <header className="sticky top-0 z-40 bg-brand-blue shadow-[0_1px_0_rgba(255,255,255,0.08),0_4px_12px_rgba(0,0,0,0.12)]">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
         <Link
           href={localizedPath("/", locale)}
@@ -30,13 +30,13 @@ export default function Header({ locale }: { locale: Locale }) {
           <Image src="/wordmark.png" alt="terrenoSV" width={1284} height={411} unoptimized className="h-8 w-auto sm:h-9" priority />
         </Link>
 
-        <nav className="hidden md:flex items-center gap-6">
+        <nav className="hidden md:flex items-center gap-7">
           {links.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className={`text-sm font-medium transition-colors hover:text-white ${
-                isActive(link.href) ? "text-white" : "text-white/70"
+              className={`text-sm font-semibold transition-colors hover:text-white ${
+                isActive(link.href) ? "text-white" : "text-white/75"
               }`}
             >
               {link.label}
@@ -44,16 +44,16 @@ export default function Header({ locale }: { locale: Locale }) {
           ))}
         </nav>
 
-        <div className="hidden md:flex items-center gap-3">
+        <div className="hidden md:flex items-center gap-4">
           <Link
             href={localizedPath(pathname, otherLocale(locale))}
-            className="text-sm font-medium text-white/70 hover:text-white"
+            className="text-sm font-semibold text-white/75 hover:text-white"
           >
             {dict.nav.langSwitch}
           </Link>
           <Link
             href={localizedPath("/#app", locale)}
-            className="rounded-full bg-accent px-4 py-2 text-sm font-semibold text-[#1a202c] transition-colors hover:opacity-90"
+            className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-[#1a202c] transition-colors hover:opacity-90"
           >
             {dict.nav.app}
           </Link>
@@ -61,7 +61,7 @@ export default function Header({ locale }: { locale: Locale }) {
 
         <button
           type="button"
-          className="md:hidden rounded-md border border-white/30 p-2 text-white"
+          className="md:hidden rounded-lg border border-white/30 p-2 text-white"
           aria-label="Menu"
           aria-expanded={open}
           onClick={() => setOpen((v) => !v)}
@@ -80,8 +80,8 @@ export default function Header({ locale }: { locale: Locale }) {
                 key={link.href}
                 href={link.href}
                 onClick={() => setOpen(false)}
-                className={`rounded-md px-2 py-2 text-sm font-medium ${
-                  isActive(link.href) ? "bg-white/10 text-white" : "text-white/70"
+                className={`rounded-lg px-2 py-2 text-sm font-semibold ${
+                  isActive(link.href) ? "bg-white/10 text-white" : "text-white/75"
                 }`}
               >
                 {link.label}
@@ -90,14 +90,14 @@ export default function Header({ locale }: { locale: Locale }) {
             <Link
               href={localizedPath(pathname, otherLocale(locale))}
               onClick={() => setOpen(false)}
-              className="rounded-md px-2 py-2 text-sm font-medium text-white/70"
+              className="rounded-lg px-2 py-2 text-sm font-semibold text-white/75"
             >
               {dict.nav.langSwitch}
             </Link>
             <Link
               href={localizedPath("/#app", locale)}
               onClick={() => setOpen(false)}
-              className="mt-2 rounded-full bg-accent px-4 py-2 text-center text-sm font-semibold text-[#1a202c]"
+              className="mt-2 rounded-lg bg-accent px-4 py-2 text-center text-sm font-semibold text-[#1a202c]"
             >
               {dict.nav.app}
             </Link>

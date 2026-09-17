@@ -8,7 +8,7 @@ export default function NotFound() {
       </span>
       <h1 className="text-2xl font-bold text-foreground">Page not found</h1>
       <p className="text-foreground-muted">The page you&rsquo;re looking for doesn&rsquo;t exist.</p>
-      <Link href="/" className="rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-white">
+      <Link href="/" className="rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-white hover:bg-primary-hover">
         Back home
       </Link>
     </div>

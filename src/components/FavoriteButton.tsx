@@ -24,7 +24,7 @@ export default function FavoriteButton({
           e.preventDefault();
           toggleFavorite(listingId);
         }}
-        className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
+        className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition-colors ${
           active
             ? "border-accent-warm bg-accent-warm/10 text-accent-warm"
             : "border-border text-foreground-muted hover:border-primary hover:text-primary"
@@ -46,7 +46,7 @@ export default function FavoriteButton({
       }}
       aria-pressed={active}
       aria-label={active ? dict.listingDetail.saved : dict.listingDetail.save}
-      className={`flex h-9 w-9 items-center justify-center rounded-full bg-surface/90 shadow-sm backdrop-blur transition-colors ${
+      className={`flex h-9 w-9 items-center justify-center rounded-full bg-surface/90 shadow-card backdrop-blur transition-colors ${
         active ? "text-accent-warm" : "text-foreground-muted hover:text-accent-warm"
       }`}
     >

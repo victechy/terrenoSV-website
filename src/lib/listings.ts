@@ -65,9 +65,18 @@ function sanitizeMapUrl(url: string | undefined): string | null {
   return GOOGLE_MAPS_URL_PREFIXES.some((p) => trimmed.startsWith(p)) ? trimmed : null;
 }
 
-// Ported from ListingsDisplay.js getImageUrls — Drive's thumbnail endpoint
-// hotlinks reliably as a plain <img>; uc?export=view often serves an
-// interstitial page instead when loaded that way.
+// Google Drive's thumbnail endpoint hotlinks reliably as a plain <img> (unlike
+// uc?export=view, which often serves an interstitial page instead), but it's
+// not built for hotlinking at scale: no CDN caching, and it's slow/throttled
+// under load. Routing it through images.weserv.nl gets us a cached, resized,
+// webp-compressed copy instead of hitting Drive cold on every page view.
+function proxyDriveThumbnail(fileId: string): string {
+  const driveUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
+  return `https://images.weserv.nl/?url=${encodeURIComponent(driveUrl)}&w=1000&output=webp&q=82`;
+}
+
+// Ported from ListingsDisplay.js getImageUrls, adapted to proxy every
+// resolved Drive thumbnail through images.weserv.nl (see proxyDriveThumbnail).
 export function getImageUrls(photosString: string | undefined): string[] {
   if (!photosString) return [];
 
@@ -76,22 +85,25 @@ export function getImageUrls(photosString: string | undefined): string[] {
     .map((url) => url.trim())
     .filter((url) => url.length > 0)
     .map((url) => {
-      if (url.includes("drive.google.com/thumbnail?id=")) return url;
+      if (url.includes("drive.google.com/thumbnail?id=")) {
+        const idMatch = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+        return idMatch ? proxyDriveThumbnail(idMatch[1]) : url;
+      }
 
       if (url.includes("drive.google.com/uc?export=view&id=")) {
         const idMatch = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-        if (idMatch) return `https://drive.google.com/thumbnail?id=${idMatch[1]}&sz=w1000`;
+        if (idMatch) return proxyDriveThumbnail(idMatch[1]);
         return url;
       }
 
       const fileViewMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
-      if (fileViewMatch) return `https://drive.google.com/thumbnail?id=${fileViewMatch[1]}&sz=w1000`;
+      if (fileViewMatch) return proxyDriveThumbnail(fileViewMatch[1]);
 
       const openMatch = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-      if (openMatch) return `https://drive.google.com/thumbnail?id=${openMatch[1]}&sz=w1000`;
+      if (openMatch) return proxyDriveThumbnail(openMatch[1]);
 
       if (/^[a-zA-Z0-9_-]{25,}$/.test(url)) {
-        return `https://drive.google.com/thumbnail?id=${url}&sz=w1000`;
+        return proxyDriveThumbnail(url);
       }
 
       return url;

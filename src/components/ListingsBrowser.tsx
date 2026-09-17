@@ -91,16 +91,21 @@ export default function ListingsBrowser({
 
   return (
     <div>
-      <div className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-4">
-        <input
-          type="search"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder={dict.listings.searchPlaceholder}
-          className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm outline-none focus:border-primary"
-        />
+      <div className="flex flex-col gap-3 rounded-xl bg-surface p-4 shadow-panel">
+        <div className="relative">
+          <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground-muted">
+            <SearchIcon />
+          </span>
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={dict.listings.searchPlaceholder}
+            className="w-full rounded-lg border border-border bg-background py-2.5 pl-10 pr-4 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/15"
+          />
+        </div>
 
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-2.5">
           <Select value={propertyType} onChange={setPropertyType} label={dict.listings.filterType}>
             <option value="all">{dict.listings.allTypes}</option>
             {propertyTypes.map((t) => (
@@ -134,10 +139,14 @@ export default function ListingsBrowser({
           <button
             type="button"
             onClick={() => setFavoritesOnly((v) => !v)}
-            className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
-              favoritesOnly ? "border-accent-warm bg-accent-warm/10 text-accent-warm" : "border-border text-foreground-muted"
+            aria-pressed={favoritesOnly}
+            className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+              favoritesOnly
+                ? "border-accent-warm bg-accent-warm/10 text-accent-warm"
+                : "border-border text-foreground-muted hover:border-accent-warm/50 hover:text-accent-warm"
             }`}
           >
+            <HeartIcon filled={favoritesOnly} />
             {dict.listings.favoritesOnly}
           </button>
         </div>
@@ -184,9 +193,30 @@ function Select({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       aria-label={label}
-      className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+      className="cursor-pointer rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/15"
     >
       {children}
     </select>
+  );
+}
+
+function SearchIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+      <circle cx="11" cy="11" r="7" />
+      <path strokeLinecap="round" d="m20 20-3.5-3.5" />
+    </svg>
+  );
+}
+
+function HeartIcon({ filled }: { filled: boolean }) {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8" aria-hidden>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M12 20.5s-7.5-4.6-10-9.3C.5 8 2 4.5 5.5 4c2.1-.3 4 .8 6.5 3.4C14.5 4.8 16.4 3.7 18.5 4 22 4.5 23.5 8 22 11.2c-2.5 4.7-10 9.3-10 9.3Z"
+      />
+    </svg>
   );
 }

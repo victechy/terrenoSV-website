@@ -9,7 +9,7 @@ export default function AboutView({ locale }: { locale: Locale }) {
       <h1 className="text-3xl font-bold text-foreground sm:text-4xl">{dict.about.title}</h1>
       <p className="mt-6 text-lg text-foreground-muted">{dict.about.body}</p>
 
-      <div className="mt-8 rounded-2xl border border-border bg-surface p-6">
+      <div className="mt-8 rounded-xl bg-surface p-6 shadow-panel">
         <h2 className="text-lg font-semibold text-foreground">{dict.about.missionTitle}</h2>
         <p className="mt-2 text-foreground-muted">{dict.about.missionText}</p>
       </div>
@@ -19,7 +19,7 @@ export default function AboutView({ locale }: { locale: Locale }) {
 
       <Link
         href={localizedPath("/listings", locale)}
-        className="mt-8 inline-block rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white hover:bg-primary-hover"
+        className="mt-8 inline-block rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-white hover:bg-primary-hover"
       >
         {dict.about.cta}
       </Link>

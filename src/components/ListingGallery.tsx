@@ -8,7 +8,7 @@ export default function ListingGallery({ photos, title }: { photos: string[]; ti
 
   if (photos.length === 0) {
     return (
-      <div className="flex aspect-[16/10] items-center justify-center rounded-2xl bg-surface-muted text-foreground-muted">
+      <div className="flex aspect-[16/10] items-center justify-center rounded-xl bg-surface-muted text-foreground-muted">
         No photos available
       </div>
     );
@@ -18,7 +18,7 @@ export default function ListingGallery({ photos, title }: { photos: string[]; ti
 
   return (
     <div>
-      <div className="relative aspect-[16/10] overflow-hidden rounded-2xl bg-surface-muted">
+      <div className="relative aspect-[16/10] overflow-hidden rounded-xl bg-surface-muted shadow-card">
         <Image
           key={photos[index]}
           src={photos[index]}
@@ -36,17 +36,17 @@ export default function ListingGallery({ photos, title }: { photos: string[]; ti
               type="button"
               onClick={() => go(-1)}
               aria-label="Previous photo"
-              className="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70"
+              className="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white transition-colors hover:bg-black/70"
             >
-              ‹
+              <ChevronIcon direction="left" />
             </button>
             <button
               type="button"
               onClick={() => go(1)}
               aria-label="Next photo"
-              className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70"
+              className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white transition-colors hover:bg-black/70"
             >
-              ›
+              <ChevronIcon direction="right" />
             </button>
             <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5">
               {photos.map((p, i) => (
@@ -80,5 +80,13 @@ export default function ListingGallery({ photos, title }: { photos: string[]; ti
         </div>
       )}
     </div>
+  );
+}
+
+function ChevronIcon({ direction }: { direction: "left" | "right" }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" d={direction === "left" ? "M15 18l-6-6 6-6" : "M9 6l6 6-6 6"} />
+    </svg>
   );
 }

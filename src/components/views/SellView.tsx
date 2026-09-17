@@ -18,14 +18,14 @@ export default function SellView({ locale }: { locale: Locale }) {
         href={dict.sell.formUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="mt-8 inline-block rounded-full bg-primary px-8 py-3.5 text-base font-semibold text-white hover:bg-primary-hover"
+        className="mt-8 inline-block rounded-lg bg-primary px-8 py-3.5 text-base font-semibold text-white shadow-card hover:bg-primary-hover"
       >
         {dict.sell.cta}
       </a>
 
       <div className="mt-14 grid gap-6 text-left sm:grid-cols-3">
         {benefits.map((b) => (
-          <div key={b.title} className="rounded-2xl border border-border bg-surface p-5">
+          <div key={b.title} className="rounded-xl bg-surface p-5 shadow-panel">
             <h2 className="font-semibold text-foreground">{b.title}</h2>
             <p className="mt-1.5 text-sm text-foreground-muted">{b.body}</p>
           </div>
