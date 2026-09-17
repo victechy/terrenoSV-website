@@ -41,6 +41,15 @@ const COL_SELLER_STATUS = 'Seller Status';
 const TOKEN_TTL_DAYS = 30;
 const ALLOWED_STATUSES = ['Pending Sale', 'Sold', 'Removed'];
 
+// Self-edit is deliberately narrow: price/title/description are low-risk,
+// correctable-by-the-seller fields. Photos, location, and property type stay
+// out of self-edit — those are exactly the changes worth a second look.
+const EDITABLE_COLUMNS = {
+  price: 'Precio (USD)',
+  title: 'Título de la propiedad',
+  description: 'Descripción',
+};
+
 function doPost(e) {
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
@@ -55,6 +64,7 @@ function doPost(e) {
     if (body.action === 'request-link') return handleRequestLink(body);
     if (body.action === 'verify-token') return handleVerifyToken(body);
     if (body.action === 'update-status') return handleUpdateStatus(body);
+    if (body.action === 'update-fields') return handleUpdateFields(body);
 
     return jsonResponse({ success: false, error: 'Unknown action' });
   } catch (err) {
@@ -144,6 +154,58 @@ function handleUpdateStatus(body) {
 
   // Either the id doesn't exist, or it exists but isn't owned by this
   // session's email — same error either way, don't leak which.
+  return jsonResponse({ success: false, error: 'Listing not found' });
+}
+
+function handleUpdateFields(body) {
+  const token = (body.token || '').toString();
+  const listingId = (body.listingId || '').toString();
+  const fields = body.fields && typeof body.fields === 'object' ? body.fields : {};
+
+  const found = findToken(token);
+  if (!found) return jsonResponse({ success: false, error: 'Session expired' });
+
+  // Whitelist which columns get written, and validate each one — never trust
+  // the request to only send known-good keys/values.
+  const updates = {};
+  if (Object.prototype.hasOwnProperty.call(fields, 'price')) {
+    const price = Number(fields.price);
+    if (!isFinite(price) || price <= 0) return jsonResponse({ success: false, error: 'Invalid price' });
+    updates[EDITABLE_COLUMNS.price] = price;
+  }
+  if (Object.prototype.hasOwnProperty.call(fields, 'title')) {
+    const title = (fields.title || '').toString().trim();
+    if (!title || title.length > 200) return jsonResponse({ success: false, error: 'Invalid title' });
+    updates[EDITABLE_COLUMNS.title] = title;
+  }
+  if (Object.prototype.hasOwnProperty.call(fields, 'description')) {
+    const description = (fields.description || '').toString().trim();
+    if (description.length > 5000) return jsonResponse({ success: false, error: 'Description too long' });
+    updates[EDITABLE_COLUMNS.description] = description;
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return jsonResponse({ success: false, error: 'No fields to update' });
+  }
+
+  const listingsSheet = SpreadsheetApp.openById(LISTINGS_SHEET_ID).getSheets()[0];
+  const data = listingsSheet.getDataRange().getDisplayValues();
+  const headers = data[0];
+  const timestampCol = headers.indexOf(COL_TIMESTAMP);
+  const emailCol = headers.indexOf(COL_CONTACT_EMAIL);
+
+  for (let i = 1; i < data.length; i++) {
+    const rowEmail = (data[i][emailCol] || '').toLowerCase().trim();
+    if (data[i][timestampCol] === listingId && rowEmail === found.email) {
+      const row = i + 1;
+      Object.keys(updates).forEach(function (colName) {
+        const colIndex = headers.indexOf(colName);
+        if (colIndex !== -1) listingsSheet.getRange(row, colIndex + 1).setValue(updates[colName]);
+      });
+      return jsonResponse({ success: true });
+    }
+  }
+
   return jsonResponse({ success: false, error: 'Listing not found' });
 }
 

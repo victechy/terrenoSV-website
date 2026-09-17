@@ -8,10 +8,12 @@ import { OwnerListing, SellerStatus, fetchOwnerListings } from "@/lib/listings";
 import { fetchAgents } from "@/lib/agents";
 import { formatUsdCurrency } from "@/lib/converter";
 import {
+  EditableListingFields,
   clearPortalToken,
   loadPortalToken,
   requestLoginLink,
   savePortalToken,
+  updateListingFields,
   updateListingStatus,
   verifyPortalToken,
 } from "@/lib/portal";
@@ -102,6 +104,10 @@ export default function PortalView() {
     setListings((prev) => prev.map((l) => (l.id === id ? { ...l, sellerStatus: status } : l)));
   };
 
+  const handleFieldsChange = (id: string, fields: EditableListingFields) => {
+    setListings((prev) => prev.map((l) => (l.id === id ? { ...l, ...fields } : l)));
+  };
+
   if (phase === "loading") {
     return (
       <div className="flex min-h-[60vh] items-center justify-center px-4">
@@ -132,6 +138,7 @@ export default function PortalView() {
       expandedId={expandedId}
       setExpandedId={setExpandedId}
       onStatusChange={handleStatusChange}
+      onFieldsChange={handleFieldsChange}
       onLogout={handleLogout}
       agentSlug={agentSlug}
     />
@@ -227,6 +234,7 @@ function Dashboard({
   expandedId,
   setExpandedId,
   onStatusChange,
+  onFieldsChange,
   onLogout,
   agentSlug,
 }: {
@@ -238,6 +246,7 @@ function Dashboard({
   expandedId: string | null;
   setExpandedId: (id: string | null) => void;
   onStatusChange: (id: string, status: Exclude<SellerStatus, "Active">) => void;
+  onFieldsChange: (id: string, fields: EditableListingFields) => void;
   onLogout: () => void;
   agentSlug: string | null;
 }) {
@@ -289,6 +298,7 @@ function Dashboard({
                 expanded={expandedId === listing.id}
                 onToggle={() => setExpandedId(expandedId === listing.id ? null : listing.id)}
                 onStatusChange={onStatusChange}
+                onFieldsChange={onFieldsChange}
               />
             ))}
           </div>
@@ -356,13 +366,16 @@ function ListingRow({
   expanded,
   onToggle,
   onStatusChange,
+  onFieldsChange,
 }: {
   listing: OwnerListing;
   token: string;
   expanded: boolean;
   onToggle: () => void;
   onStatusChange: (id: string, status: Exclude<SellerStatus, "Active">) => void;
+  onFieldsChange: (id: string, fields: EditableListingFields) => void;
 }) {
+  const [editing, setEditing] = useState(false);
   const meta = STATUS_META[statusKey(listing)];
 
   return (
@@ -387,10 +400,137 @@ function ListingRow({
 
       {expanded && (
         <div className="border-t border-border p-4">
-          <ListingActions listing={listing} token={token} onStatusChange={onStatusChange} />
+          {editing ? (
+            <EditForm
+              listing={listing}
+              token={token}
+              onCancel={() => setEditing(false)}
+              onSaved={(fields) => {
+                onFieldsChange(listing.id, fields);
+                setEditing(false);
+              }}
+            />
+          ) : (
+            <div className="flex flex-col gap-3">
+              {canChangeStatus(listing) && (
+                <button
+                  type="button"
+                  onClick={() => setEditing(true)}
+                  className="self-start text-sm font-semibold text-primary hover:underline"
+                >
+                  Editar título, precio o descripción
+                </button>
+              )}
+              <ListingActions listing={listing} token={token} onStatusChange={onStatusChange} />
+            </div>
+          )}
         </div>
       )}
     </div>
+  );
+}
+
+function EditForm({
+  listing,
+  token,
+  onCancel,
+  onSaved,
+}: {
+  listing: OwnerListing;
+  token: string;
+  onCancel: () => void;
+  onSaved: (fields: EditableListingFields) => void;
+}) {
+  const [title, setTitle] = useState(listing.title);
+  const [price, setPrice] = useState(listing.price != null ? String(listing.price) : "");
+  const [description, setDescription] = useState(listing.description);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmedTitle = title.trim();
+    if (!trimmedTitle) {
+      setError("El título no puede estar vacío.");
+      return;
+    }
+
+    const fields: EditableListingFields = { title: trimmedTitle, description: description.trim() };
+    if (price.trim()) {
+      const numericPrice = parseFloat(price.replace(/,/g, ""));
+      if (!isFinite(numericPrice) || numericPrice <= 0) {
+        setError("Ingresa un precio válido.");
+        return;
+      }
+      fields.price = numericPrice;
+    }
+
+    setSaving(true);
+    setError(null);
+    const res = await updateListingFields(token, listing.id, fields);
+    setSaving(false);
+    if (res.success) {
+      onSaved(fields);
+    } else {
+      setError(res.error || "No se pudo guardar. Intenta de nuevo.");
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+      <div>
+        <label className="mb-1 block text-xs font-medium text-foreground-muted">Título</label>
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          maxLength={200}
+          required
+          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/15"
+        />
+      </div>
+      <div>
+        <label className="mb-1 block text-xs font-medium text-foreground-muted">Precio (USD)</label>
+        <input
+          type="text"
+          inputMode="decimal"
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
+          placeholder="Sin precio"
+          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/15"
+        />
+      </div>
+      <div>
+        <label className="mb-1 block text-xs font-medium text-foreground-muted">Descripción</label>
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          rows={4}
+          maxLength={5000}
+          className="w-full resize-y rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/15"
+        />
+      </div>
+
+      {error && <p className="text-sm text-red-600">{error}</p>}
+
+      <div className="flex gap-2">
+        <button
+          type="submit"
+          disabled={saving}
+          className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+        >
+          {saving ? "Guardando…" : "Guardar cambios"}
+        </button>
+        <button
+          type="button"
+          disabled={saving}
+          onClick={onCancel}
+          className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground-muted"
+        >
+          Cancelar
+        </button>
+      </div>
+    </form>
   );
 }
 

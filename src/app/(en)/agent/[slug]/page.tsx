@@ -22,10 +22,19 @@ export async function generateMetadata({
   const agent = await fetchAgentBySlug(slug).catch(() => null);
   if (!agent) return {};
 
+  const allListings = await fetchListings().catch(() => []);
+  const listings = allListings.filter((l) => l.contactEmail.trim().toLowerCase() === agent.email);
+  const description = `${agent.displayName}'s listings on terrenoSV.`;
+
   return {
     title: agent.displayName,
-    description: `${agent.displayName}'s listings on terrenoSV.`,
+    description,
     alternates: { languages: { en: `/agent/${slug}`, es: `/es/agent/${slug}` } },
+    openGraph: {
+      title: agent.displayName,
+      description,
+      images: listings[0]?.photos.slice(0, 1),
+    },
   };
 }
 

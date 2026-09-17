@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Agent } from "@/lib/agents";
-import { Listing } from "@/lib/listings";
+import { Listing, formatPhoneForWhatsApp } from "@/lib/listings";
 import { Locale, getDictionary, localizedPath } from "@/lib/dictionary";
 import ListingCard from "../ListingCard";
 
@@ -15,6 +15,18 @@ export default function AgentView({
 }) {
   const dict = getDictionary(locale);
 
+  // Every listing a seller submits carries their own contact details, so any
+  // of theirs works — first one found is enough.
+  const contactPhone = listings.find((l) => l.contactPhone)?.contactPhone;
+  const contactEmail = listings.find((l) => l.contactEmail)?.contactEmail;
+  const whatsappPhone = formatPhoneForWhatsApp(contactPhone);
+  const whatsappUrl = whatsappPhone
+    ? `https://wa.me/${whatsappPhone.replace("+", "")}?text=${encodeURIComponent(dict.agent.contactMessage)}`
+    : null;
+  const mailtoUrl = contactEmail
+    ? `mailto:${encodeURIComponent(contactEmail)}?subject=${encodeURIComponent(dict.agent.contactMessage)}`
+    : null;
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
       <div className="border-b border-border pb-8">
@@ -24,6 +36,29 @@ export default function AgentView({
         <p className="mt-2 text-foreground-muted">{dict.agent.subtitle}</p>
         {listings.length > 0 && (
           <p className="mt-1 text-sm font-semibold text-primary">{dict.agent.listingsCount(listings.length)}</p>
+        )}
+
+        {(whatsappUrl || mailtoUrl) && (
+          <div className="mt-5 flex flex-wrap gap-3">
+            {whatsappUrl && (
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-lg bg-success px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90"
+              >
+                {dict.listingDetail.whatsapp}
+              </a>
+            )}
+            {mailtoUrl && (
+              <a
+                href={mailtoUrl}
+                className="inline-flex items-center gap-2 rounded-lg border border-primary px-5 py-2.5 text-sm font-semibold text-primary hover:bg-primary hover:text-white"
+              >
+                {dict.listingDetail.email}
+              </a>
+            )}
+          </div>
         )}
       </div>
 

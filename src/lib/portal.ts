@@ -61,6 +61,25 @@ export async function updateListingStatus(
   }
 }
 
+export type EditableListingFields = { price?: number; title?: string; description?: string };
+
+export async function updateListingFields(
+  token: string,
+  listingId: string,
+  fields: EditableListingFields
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    return await callPortal<{ success: boolean; error?: string }>({
+      action: "update-fields",
+      token,
+      listingId,
+      fields,
+    });
+  } catch {
+    return { success: false, error: "network" };
+  }
+}
+
 export function loadPortalToken(): string | null {
   if (typeof window === "undefined") return null;
   try {
