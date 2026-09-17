@@ -12,10 +12,7 @@ export default function Footer({ locale }: { locale: Locale }) {
         <div className="flex flex-col gap-8 sm:flex-row sm:justify-between">
           <div className="max-w-sm">
             <div className="flex items-center gap-2">
-              <Image src="/icon-nav.png" alt="" width={400} height={295} unoptimized className="h-7 w-auto" />
-              <span className="font-brand text-xl text-white">
-                terreno<span className="text-accent">SV</span>
-              </span>
+              <Image src="/wordmark.png" alt="terrenoSV" width={1284} height={411} unoptimized className="h-7 w-auto" />
             </div>
             <p className="mt-3 text-sm text-white/70">{dict.footer.tagline}</p>
           </div>

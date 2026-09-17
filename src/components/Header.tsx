@@ -27,10 +27,7 @@ export default function Header({ locale }: { locale: Locale }) {
           className="flex items-center gap-2 shrink-0"
           onClick={() => setOpen(false)}
         >
-          <Image src="/icon-nav.png" alt="" width={400} height={295} unoptimized className="h-8 w-auto sm:h-9" priority />
-          <span className="font-brand text-2xl leading-none text-white">
-            terreno<span className="text-accent">SV</span>
-          </span>
+          <Image src="/wordmark.png" alt="terrenoSV" width={1284} height={411} unoptimized className="h-8 w-auto sm:h-9" priority />
         </Link>
 
         <nav className="hidden md:flex items-center gap-6">
