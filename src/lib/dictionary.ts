@@ -233,7 +233,7 @@ export const dictionary = {
         },
         {
           heading: "Contact",
-          body: "Questions about this policy can be sent to vflores.sv@gmail.com.",
+          body: "Questions about this policy can be sent to hello@terrenosv.org.",
         },
       ],
     },
@@ -466,7 +466,7 @@ export const dictionary = {
         },
         {
           heading: "Contacto",
-          body: "Preguntas sobre esta política pueden enviarse a vflores.sv@gmail.com.",
+          body: "Preguntas sobre esta política pueden enviarse a hello@terrenosv.org.",
         },
       ],
     },

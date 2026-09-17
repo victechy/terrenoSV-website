@@ -50,8 +50,8 @@ export default function Footer({ locale }: { locale: Locale }) {
             </div>
             <div className="flex flex-col gap-2 text-sm">
               <span className="font-semibold text-white">{dict.footer.contact}</span>
-              <a href="mailto:vflores.sv@gmail.com" className="text-white/70 hover:text-white">
-                vflores.sv@gmail.com
+              <a href="mailto:hello@terrenosv.org" className="text-white/70 hover:text-white">
+                hello@terrenosv.org
               </a>
               <a
                 href="https://www.florespublishing.org"
