@@ -37,13 +37,13 @@ const CONFIRMATION_COPY = {
     subject: "You're on the terrenoSV launch list",
     body: "Thanks for signing up! We'll email you the moment the terrenoSV app is live.\n\n" +
       "One request: please add app@terrenosv.org to your contacts (or move this email out of Spam/Promotions if that's where it landed). That way our launch announcement actually reaches your inbox.\n\n" +
-      "— terrenoSV",
+      "— Victor, terrenoSV",
   },
   es: {
     subject: "Ya estás en la lista de lanzamiento de terrenoSV",
     body: "¡Gracias por registrarte! Te avisaremos por correo en cuanto la app terrenoSV esté disponible.\n\n" +
       "Un favor: agrega app@terrenosv.org a tus contactos (o mueve este correo fuera de Spam/Promociones si llegó ahí). Así nuestro anuncio de lanzamiento sí llegará a tu bandeja de entrada.\n\n" +
-      "— terrenoSV",
+      "— Victor, terrenoSV",
   },
 };
 
@@ -86,18 +86,15 @@ function doPost(e) {
 
     // Best-effort: a failed send shouldn't undo the signup that already
     // succeeded above, so this is deliberately isolated from the outer catch.
-    var mailError = null;
     try {
       const locale = body.locale === 'es' ? 'es' : 'en';
       const copy = CONFIRMATION_COPY[locale];
       GmailApp.sendEmail(email, copy.subject, copy.body, { from: FROM_ALIAS, name: 'terrenoSV' });
     } catch (mailErr) {
-      // TEMPORARY: surfaced in the response so we can see the real failure
-      // instead of guessing. Revert to silently swallowing once this works.
-      mailError = mailErr.message;
+      // swallow — subscription itself still succeeded
     }
 
-    return jsonResponse({ success: true, mailError: mailError });
+    return jsonResponse({ success: true });
   } catch (err) {
     return jsonResponse({ success: false, error: err.message });
   } finally {
