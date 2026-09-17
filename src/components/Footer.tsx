@@ -12,7 +12,7 @@ export default function Footer({ locale }: { locale: Locale }) {
         <div className="flex flex-col gap-8 sm:flex-row sm:justify-between">
           <div className="max-w-sm">
             <div className="flex items-center gap-2">
-              <Image src="/icon-nav.png" alt="" width={400} height={293} unoptimized className="h-7 w-auto" />
+              <Image src="/icon-nav.png" alt="" width={400} height={295} unoptimized className="h-7 w-auto" />
               <span className="font-brand text-xl text-white">
                 terreno<span className="text-accent">SV</span>
               </span>
