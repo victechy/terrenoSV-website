@@ -16,6 +16,7 @@ import {
   requestLoginLink,
   saveAdminToken,
   setListingStatus,
+  triggerRebuild,
   verifyPortalToken,
 } from "@/lib/portal";
 import { getImageUrls } from "@/lib/listings";
@@ -122,6 +123,19 @@ export default function AdminView() {
     setListings((prev) => prev.map((l) => (l.id === id ? { ...l, publishedStatus: status } : l)));
   };
 
+  const [rebuilding, setRebuilding] = useState(false);
+  const [rebuildMessage, setRebuildMessage] = useState<string | null>(null);
+
+  const handleRebuild = async () => {
+    setRebuilding(true);
+    setRebuildMessage(null);
+    const res = await triggerRebuild(token!);
+    setRebuilding(false);
+    setRebuildMessage(
+      res.success ? "Rebuild started — usually live in a few minutes." : res.error || "Couldn't start rebuild."
+    );
+  };
+
   if (phase === "loading") {
     return (
       <div className="flex min-h-[60vh] items-center justify-center px-4">
@@ -181,14 +195,27 @@ export default function AdminView() {
         <div>
           <h1 className="text-xl font-extrabold tracking-tight text-foreground">Admin panel</h1>
         </div>
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="shrink-0 rounded-lg border border-border px-3 py-2 text-sm font-semibold text-foreground-muted hover:border-primary hover:text-primary"
-        >
-          Log out
-        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            onClick={handleRebuild}
+            disabled={rebuilding}
+            title="Publishes any pending approvals/rejections to the live site immediately, instead of waiting for the automatic 6-hour rebuild."
+            className="rounded-lg border border-border px-3 py-2 text-sm font-semibold text-foreground-muted hover:border-primary hover:text-primary disabled:opacity-60"
+          >
+            {rebuilding ? "Rebuilding…" : "Rebuild site"}
+          </button>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="rounded-lg border border-border px-3 py-2 text-sm font-semibold text-foreground-muted hover:border-primary hover:text-primary"
+          >
+            Log out
+          </button>
+        </div>
       </div>
+
+      {rebuildMessage && <p className="mt-2 text-sm text-foreground-muted">{rebuildMessage}</p>}
 
       <div className="mt-6 flex gap-2 border-b border-border">
         <TabButton active={tab === "applications"} onClick={() => setTab("applications")}>
@@ -354,6 +381,15 @@ function Field({ label, value }: { label: string; value: string }) {
   );
 }
 
+type StatusFilter = "pending" | "Yes" | "No" | "all";
+
+const STATUS_FILTERS: { key: StatusFilter; label: string }[] = [
+  { key: "pending", label: "Pending" },
+  { key: "Yes", label: "Published" },
+  { key: "No", label: "Rejected" },
+  { key: "all", label: "All" },
+];
+
 function ListingsPanel({
   listings,
   loading,
@@ -368,16 +404,27 @@ function ListingsPanel({
   onStatusChange: (id: string, status: "Yes" | "No") => void;
 }) {
   const [search, setSearch] = useState("");
+  // Defaults to "pending" — with a sheet that can hold hundreds of historical
+  // rows, browsing everything by default buries the ones that actually need
+  // a decision.
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
+
+  const byStatus =
+    statusFilter === "all"
+      ? listings
+      : statusFilter === "pending"
+        ? listings.filter((l) => l.publishedStatus !== "Yes" && l.publishedStatus !== "No")
+        : listings.filter((l) => l.publishedStatus === statusFilter);
 
   const q = search.trim().toLowerCase();
   const filtered = q
-    ? listings.filter(
+    ? byStatus.filter(
         (l) =>
           l.sellerName.toLowerCase().includes(q) ||
           l.sellerEmail.toLowerCase().includes(q) ||
           l.title.toLowerCase().includes(q)
       )
-    : listings;
+    : byStatus;
 
   return (
     <div className="mt-6">
@@ -388,6 +435,23 @@ function ListingsPanel({
         placeholder="Search by agent name, email, or title…"
         className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/15"
       />
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        {STATUS_FILTERS.map((f) => (
+          <button
+            key={f.key}
+            type="button"
+            onClick={() => setStatusFilter(f.key)}
+            className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
+              statusFilter === f.key
+                ? "bg-primary text-white"
+                : "border border-border text-foreground-muted hover:border-primary hover:text-primary"
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
 
       {loading && <p className="mt-10 text-center text-sm text-foreground-muted">Loading…</p>}
       {error && <p className="mt-6 text-sm text-red-600">{error}</p>}

@@ -127,6 +127,14 @@ export async function denyAgent(token: string, applicationId: string): Promise<{
   }
 }
 
+export async function triggerRebuild(token: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    return await callPortal<{ success: boolean; error?: string }>({ action: "trigger-rebuild", token });
+  } catch {
+    return { success: false, error: "network" };
+  }
+}
+
 export type AdminListing = {
   id: string;
   title: string;

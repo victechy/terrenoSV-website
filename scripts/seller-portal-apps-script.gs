@@ -38,6 +38,18 @@
 // 10. Push a new version (see above). No new authorization/trigger needed —
 //     this reuses the same deployment, login flow, and token sheet as the
 //     seller portal, just gated to ADMIN_EMAIL below.
+//
+// Admin "Rebuild site" button additional setup:
+// 11. GitHub.com > your account menu > Settings > Developer settings >
+//     Personal access tokens > Fine-grained tokens > Generate new token.
+//     Repository access: "Only select repositories" > terrenoSV-website.
+//     Permissions > Actions: Read and write. Generate, copy the token
+//     (starts with github_pat_ or ghp_ — you only see it once).
+// 12. Set GITHUB_TOKEN below to that token.
+// 13. Push a new version (see above). This DOES add a new external-request
+//     call (UrlFetchApp to api.github.com), so re-run authorizeGmailAccess
+//     once (function dropdown > Run) and approve the new "Connect to an
+//     external service" permission prompt if one appears.
 
 // Keep this in sync with the live deployment and with PORTAL_SHARED_SECRET
 // in src/lib/portal.ts. Deliberately the real value, not a placeholder —
@@ -70,6 +82,13 @@ const COL_AGENT_EMAIL = 'Email';
 const COL_AGENT_SLUG = 'Slug';
 const COL_AGENT_DISPLAY_NAME = 'Display Name';
 const COL_AGENT_AUTO_PUBLISH = 'Auto Publish';
+
+// Lives only here, server-side — never shipped to the browser like the
+// other secrets in this project. Fine-grained PAT scoped to just this repo
+// with Actions: Read and write. See setup steps 11-13 above.
+const GITHUB_TOKEN = 'REPLACE_WITH_GITHUB_PERSONAL_ACCESS_TOKEN';
+const GITHUB_REPO = 'victechy/terrenoSV-website';
+const GITHUB_WORKFLOW_FILE = 'deploy.yml';
 
 // The "terrenoSV - Regístrate para Publicar (Responses)" sheet's id (the
 // private one with DUI numbers) — real value kept in sync here, same
@@ -126,6 +145,7 @@ function doPost(e) {
     if (body.action === 'deny-agent') return handleDenyAgent(body);
     if (body.action === 'list-listings') return handleListListings(body);
     if (body.action === 'set-listing-status') return handleSetListingStatus(body);
+    if (body.action === 'trigger-rebuild') return handleTriggerRebuild(body);
 
     return jsonResponse({ success: false, error: 'Unknown action' });
   } catch (err) {
@@ -524,6 +544,32 @@ function handleSetListingStatus(body) {
   }
 
   return jsonResponse({ success: false, error: 'Listing not found' });
+}
+
+function handleTriggerRebuild(body) {
+  const token = (body.token || '').toString();
+  if (!requireAdmin(token)) return jsonResponse({ success: false, error: 'Unauthorized' });
+
+  try {
+    const url =
+      'https://api.github.com/repos/' + GITHUB_REPO + '/actions/workflows/' + GITHUB_WORKFLOW_FILE + '/dispatches';
+    const res = UrlFetchApp.fetch(url, {
+      method: 'post',
+      contentType: 'application/json',
+      headers: {
+        Authorization: 'Bearer ' + GITHUB_TOKEN,
+        Accept: 'application/vnd.github+json',
+      },
+      payload: JSON.stringify({ ref: 'main' }),
+      muteHttpExceptions: true,
+    });
+    const code = res.getResponseCode();
+    // GitHub returns 204 No Content on a successful dispatch — no body to parse.
+    if (code === 204) return jsonResponse({ success: true });
+    return jsonResponse({ success: false, error: 'GitHub returned ' + code + ': ' + res.getContentText() });
+  } catch (err) {
+    return jsonResponse({ success: false, error: err.message });
+  }
 }
 
 // Adds (or updates, if the email is already there) a row on the Agents
