@@ -64,11 +64,13 @@ const COL_AGENT_SLUG = 'Slug';
 const COL_AGENT_DISPLAY_NAME = 'Display Name';
 const COL_AGENT_AUTO_PUBLISH = 'Auto Publish';
 
-// PLACEHOLDER — fill in with the "terrenoSV - Regístrate para Publicar
-// (Responses)" sheet's id (the private one with DUI numbers). Also add a
-// "Review Status" column header to that sheet before using the admin panel —
-// left blank = pending, this script sets it to "Approved" or "Denied".
-const APPLICATION_SHEET_ID = 'REPLACE_WITH_APPLICATION_SHEET_ID';
+// The "terrenoSV - Regístrate para Publicar (Responses)" sheet's id (the
+// private one with DUI numbers) — real value kept in sync here, same
+// reasoning as SHARED_SECRET above: never leave a placeholder that a future
+// paste-over could reset the live deployment back to. That sheet also needs
+// a "Review Status" column header added — left blank = pending, this script
+// sets it to "Approved" or "Denied".
+const APPLICATION_SHEET_ID = '1YP-sGGHbFsHCTuRRD82D7IJCu-smO8asgGv80Q4ppYE';
 const COL_APP_TIMESTAMP = 'Timestamp';
 const COL_APP_EMAIL = 'Email address';
 const COL_APP_FIRST_NAME = 'Nombre(s)';
