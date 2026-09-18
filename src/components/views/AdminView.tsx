@@ -1,23 +1,30 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
+  AdminListing,
   Application,
   approveAgent,
   clearAdminToken,
   denyAgent,
   listApplications,
+  listListings,
   loadAdminToken,
   requestLoginLink,
   saveAdminToken,
+  setListingStatus,
   verifyPortalToken,
 } from "@/lib/portal";
+import { getImageUrls } from "@/lib/listings";
+import { formatUsdCurrency } from "@/lib/converter";
 
 const ADMIN_EMAIL = "vflores.sv@gmail.com";
 
 type Phase = "loading" | "login" | "link-sent" | "unauthorized" | "dashboard";
+type Tab = "applications" | "listings";
 
 export default function AdminView() {
   const router = useRouter();
@@ -28,6 +35,12 @@ export default function AdminView() {
   const [token, setToken] = useState<string | null>(null);
   const [applications, setApplications] = useState<Application[]>([]);
   const [listError, setListError] = useState<string | null>(null);
+
+  const [tab, setTab] = useState<Tab>("applications");
+  const [listings, setListings] = useState<AdminListing[]>([]);
+  const [listingsLoaded, setListingsLoaded] = useState(false);
+  const [listingsLoading, setListingsLoading] = useState(false);
+  const [listingsError, setListingsError] = useState<string | null>(null);
 
   useEffect(() => {
     // Deliberate: resolving auth state from localStorage/the URL is a
@@ -74,11 +87,39 @@ export default function AdminView() {
     clearAdminToken();
     setToken(null);
     setApplications([]);
+    setListings([]);
+    setListingsLoaded(false);
+    setTab("applications");
     setPhase("login");
   };
 
   const handleDecided = (id: string) => {
     setApplications((prev) => prev.filter((a) => a.id !== id));
+  };
+
+  // Lazy-loaded: only fetched the first time the Listings tab is opened,
+  // not on every login (this list can get long, applications stays cheap).
+  useEffect(() => {
+    if (tab !== "listings" || listingsLoaded || !token) return;
+    // Deliberate: kicking off the fetch triggered by the tab switch is the
+    // whole point of this effect, and the loading flag has to flip before
+    // the async call starts.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setListingsLoading(true);
+    listListings(token)
+      .then((data) => {
+        if (data.success) setListings(data.listings || []);
+        else setListingsError(data.error || "Couldn't load listings.");
+      })
+      .catch(() => setListingsError("Couldn't load listings."))
+      .finally(() => {
+        setListingsLoading(false);
+        setListingsLoaded(true);
+      });
+  }, [tab, listingsLoaded, token]);
+
+  const handleListingStatusChange = (id: string, status: "Yes" | "No") => {
+    setListings((prev) => prev.map((l) => (l.id === id ? { ...l, publishedStatus: status } : l)));
   };
 
   if (phase === "loading") {
@@ -138,8 +179,7 @@ export default function AdminView() {
     <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-extrabold tracking-tight text-foreground">Agent applications</h1>
-          <p className="mt-0.5 text-sm text-foreground-muted">Admin panel</p>
+          <h1 className="text-xl font-extrabold tracking-tight text-foreground">Admin panel</h1>
         </div>
         <button
           type="button"
@@ -150,18 +190,61 @@ export default function AdminView() {
         </button>
       </div>
 
-      {listError && <p className="mt-6 text-sm text-red-600">{listError}</p>}
-
-      {!listError && applications.length === 0 && (
-        <p className="mt-10 text-center text-sm text-foreground-muted">No pending applications.</p>
-      )}
-
-      <div className="mt-6 flex flex-col gap-3">
-        {applications.map((app) => (
-          <ApplicationCard key={app.id} application={app} token={token!} onDecided={() => handleDecided(app.id)} />
-        ))}
+      <div className="mt-6 flex gap-2 border-b border-border">
+        <TabButton active={tab === "applications"} onClick={() => setTab("applications")}>
+          Agent applications
+        </TabButton>
+        <TabButton active={tab === "listings"} onClick={() => setTab("listings")}>
+          Listings
+        </TabButton>
       </div>
+
+      {tab === "applications" ? (
+        <>
+          {listError && <p className="mt-6 text-sm text-red-600">{listError}</p>}
+
+          {!listError && applications.length === 0 && (
+            <p className="mt-10 text-center text-sm text-foreground-muted">No pending applications.</p>
+          )}
+
+          <div className="mt-6 flex flex-col gap-3">
+            {applications.map((app) => (
+              <ApplicationCard key={app.id} application={app} token={token!} onDecided={() => handleDecided(app.id)} />
+            ))}
+          </div>
+        </>
+      ) : (
+        <ListingsPanel
+          listings={listings}
+          loading={listingsLoading}
+          error={listingsError}
+          token={token!}
+          onStatusChange={handleListingStatusChange}
+        />
+      )}
     </div>
+  );
+}
+
+function TabButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`-mb-px border-b-2 px-1 py-3 text-sm font-semibold transition-colors ${
+        active ? "border-primary text-primary" : "border-transparent text-foreground-muted hover:text-foreground"
+      }`}
+    >
+      {children}
+    </button>
   );
 }
 
@@ -267,6 +350,146 @@ function Field({ label, value }: { label: string; value: string }) {
     <div>
       <dt className="text-xs font-medium text-foreground-muted">{label}</dt>
       <dd className="text-foreground">{value}</dd>
+    </div>
+  );
+}
+
+function ListingsPanel({
+  listings,
+  loading,
+  error,
+  token,
+  onStatusChange,
+}: {
+  listings: AdminListing[];
+  loading: boolean;
+  error: string | null;
+  token: string;
+  onStatusChange: (id: string, status: "Yes" | "No") => void;
+}) {
+  const [search, setSearch] = useState("");
+
+  const q = search.trim().toLowerCase();
+  const filtered = q
+    ? listings.filter(
+        (l) =>
+          l.sellerName.toLowerCase().includes(q) ||
+          l.sellerEmail.toLowerCase().includes(q) ||
+          l.title.toLowerCase().includes(q)
+      )
+    : listings;
+
+  return (
+    <div className="mt-6">
+      <input
+        type="search"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="Search by agent name, email, or title…"
+        className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/15"
+      />
+
+      {loading && <p className="mt-10 text-center text-sm text-foreground-muted">Loading…</p>}
+      {error && <p className="mt-6 text-sm text-red-600">{error}</p>}
+      {!loading && !error && filtered.length === 0 && (
+        <p className="mt-10 text-center text-sm text-foreground-muted">No listings match.</p>
+      )}
+
+      <div className="mt-4 flex flex-col gap-3">
+        {filtered.map((listing) => (
+          <AdminListingRow key={listing.id} listing={listing} token={token} onStatusChange={onStatusChange} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const LISTING_STATUS_META: Record<string, { label: string; className: string }> = {
+  Yes: { label: "Published", className: "bg-success/15 text-success" },
+  No: { label: "Rejected", className: "bg-red-100 text-red-700" },
+  "": { label: "Pending review", className: "bg-amber-100 text-amber-800" },
+};
+
+function AdminListingRow({
+  listing,
+  token,
+  onStatusChange,
+}: {
+  listing: AdminListing;
+  token: string;
+  onStatusChange: (id: string, status: "Yes" | "No") => void;
+}) {
+  const [saving, setSaving] = useState<"Yes" | "No" | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const photo = getImageUrls(listing.photosRaw)[0];
+  const statusMeta = LISTING_STATUS_META[listing.publishedStatus] || LISTING_STATUS_META[""];
+  const priceNumber = parseFloat(listing.price);
+
+  const handleSetStatus = async (status: "Yes" | "No") => {
+    setSaving(status);
+    setError(null);
+    const res = await setListingStatus(token, listing.id, status);
+    setSaving(null);
+    if (res.success) {
+      onStatusChange(listing.id, status);
+    } else {
+      setError(res.error || "Couldn't save. Try again.");
+    }
+  };
+
+  return (
+    <div className="flex items-start gap-3 rounded-xl bg-surface p-3 shadow-card">
+      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-surface-muted">
+        {photo ? <Image src={photo} alt="" fill unoptimized className="object-cover" sizes="64px" /> : null}
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <div className="flex items-start justify-between gap-2">
+          <p className="truncate text-sm font-semibold text-foreground">{listing.title}</p>
+          <span className={`shrink-0 rounded-md px-2 py-0.5 text-xs font-semibold ${statusMeta.className}`}>
+            {statusMeta.label}
+          </span>
+        </div>
+        <p className="truncate text-sm text-foreground-muted">
+          {listing.sellerName || "—"} · {listing.sellerEmail}
+        </p>
+        <p className="mt-0.5 text-sm text-foreground-muted">
+          {Number.isFinite(priceNumber) && priceNumber > 0 ? `$${formatUsdCurrency(priceNumber)}` : "No price"}
+          {" · "}
+          {[listing.municipality, listing.department].filter(Boolean).join(", ")}
+          {listing.sellerStatus && listing.sellerStatus !== "Active" ? ` · ${listing.sellerStatus}` : ""}
+        </p>
+
+        {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+
+        <div className="mt-2 flex gap-2">
+          <button
+            type="button"
+            disabled={saving !== null}
+            onClick={() => handleSetStatus("Yes")}
+            className={`rounded-lg px-3 py-1.5 text-xs font-semibold disabled:opacity-60 ${
+              listing.publishedStatus === "Yes"
+                ? "bg-success text-white"
+                : "border border-border text-foreground-muted hover:border-success hover:text-success"
+            }`}
+          >
+            {saving === "Yes" ? "Saving…" : "Yes"}
+          </button>
+          <button
+            type="button"
+            disabled={saving !== null}
+            onClick={() => handleSetStatus("No")}
+            className={`rounded-lg px-3 py-1.5 text-xs font-semibold disabled:opacity-60 ${
+              listing.publishedStatus === "No"
+                ? "bg-red-600 text-white"
+                : "border border-border text-foreground-muted hover:border-red-400 hover:text-red-600"
+            }`}
+          >
+            {saving === "No" ? "Saving…" : "No"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

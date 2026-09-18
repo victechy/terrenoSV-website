@@ -127,6 +127,49 @@ export async function denyAgent(token: string, applicationId: string): Promise<{
   }
 }
 
+export type AdminListing = {
+  id: string;
+  title: string;
+  price: string;
+  propertyType: string;
+  transaction: string;
+  department: string;
+  municipality: string;
+  photosRaw: string;
+  sellerName: string;
+  sellerEmail: string;
+  publishedStatus: string;
+  sellerStatus: string;
+};
+
+export async function listListings(token: string): Promise<{ success: boolean; listings?: AdminListing[]; error?: string }> {
+  try {
+    return await callPortal<{ success: boolean; listings?: AdminListing[]; error?: string }>({
+      action: "list-listings",
+      token,
+    });
+  } catch {
+    return { success: false, error: "network" };
+  }
+}
+
+export async function setListingStatus(
+  token: string,
+  listingId: string,
+  status: "Yes" | "No"
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    return await callPortal<{ success: boolean; error?: string }>({
+      action: "set-listing-status",
+      token,
+      listingId,
+      status,
+    });
+  } catch {
+    return { success: false, error: "network" };
+  }
+}
+
 function loadToken(storageKey: string): string | null {
   if (typeof window === "undefined") return null;
   try {

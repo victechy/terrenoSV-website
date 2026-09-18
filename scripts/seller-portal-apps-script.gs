@@ -53,6 +53,13 @@ const LISTINGS_SHEET_ID = '128JAe0bscus3dxINM0M3ImLMGtbZGC8OAH3f0nSamE0';
 const COL_TIMESTAMP = 'Timestamp';
 const COL_CONTACT_EMAIL = 'Correo electrónico de contacto (el que verán los compradores)';
 const COL_SELLER_STATUS = 'Seller Status';
+const COL_PUBLISHED_STATUS = 'Published Status';
+const COL_PROPERTY_TYPE = 'Tipo de propiedad';
+const COL_TRANSACTION = '¿Qué deseas hacer con esta propiedad?';
+const COL_DEPARTMENT = 'Departamento';
+const COL_MUNICIPALITY = 'Municipio / Distrito';
+const COL_PHOTOS = 'Fotos de la propiedad (hasta 5)';
+const COL_SELLER_NAME = 'Tu nombre completo';
 
 // Admin surface (list/approve/deny realtor applications) — gated by checking
 // the logged-in session's email against this, not a separate auth system.
@@ -117,6 +124,8 @@ function doPost(e) {
     if (body.action === 'list-applications') return handleListApplications(body);
     if (body.action === 'approve-agent') return handleApproveAgent(body);
     if (body.action === 'deny-agent') return handleDenyAgent(body);
+    if (body.action === 'list-listings') return handleListListings(body);
+    if (body.action === 'set-listing-status') return handleSetListingStatus(body);
 
     return jsonResponse({ success: false, error: 'Unknown action' });
   } catch (err) {
@@ -434,6 +443,87 @@ function handleDenyAgent(body) {
   }
 
   return jsonResponse({ success: false, error: 'Application not found' });
+}
+
+function handleListListings(body) {
+  const token = (body.token || '').toString();
+  if (!requireAdmin(token)) return jsonResponse({ success: false, error: 'Unauthorized' });
+
+  const sheet = SpreadsheetApp.openById(LISTINGS_SHEET_ID).getSheets()[0];
+  const data = sheet.getDataRange().getDisplayValues();
+  const headers = headerRow(data);
+
+  const timestampCol = headers.indexOf(COL_TIMESTAMP);
+  const titleCol = headers.indexOf(EDITABLE_COLUMNS.title);
+  const priceCol = headers.indexOf(EDITABLE_COLUMNS.price);
+  const propertyTypeCol = headers.indexOf(COL_PROPERTY_TYPE);
+  const transactionCol = headers.indexOf(COL_TRANSACTION);
+  const departmentCol = headers.indexOf(COL_DEPARTMENT);
+  const municipalityCol = headers.indexOf(COL_MUNICIPALITY);
+  const photosCol = headers.indexOf(COL_PHOTOS);
+  const sellerNameCol = headers.indexOf(COL_SELLER_NAME);
+  const emailCol = headers.indexOf(COL_CONTACT_EMAIL);
+  const publishedStatusCol = headers.indexOf(COL_PUBLISHED_STATUS);
+  const sellerStatusCol = headers.indexOf(COL_SELLER_STATUS);
+
+  if (timestampCol === -1 || titleCol === -1 || publishedStatusCol === -1) {
+    return jsonResponse({ success: false, error: 'Listings sheet is missing an expected column.' });
+  }
+
+  const cell = function (row, col) {
+    return col === -1 ? '' : row[col] || '';
+  };
+
+  const listings = [];
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    if (!row[timestampCol]) continue;
+    listings.push({
+      id: row[timestampCol],
+      title: cell(row, titleCol),
+      price: cell(row, priceCol),
+      propertyType: cell(row, propertyTypeCol),
+      transaction: cell(row, transactionCol),
+      department: cell(row, departmentCol),
+      municipality: cell(row, municipalityCol),
+      photosRaw: cell(row, photosCol),
+      sellerName: cell(row, sellerNameCol),
+      sellerEmail: cell(row, emailCol),
+      publishedStatus: cell(row, publishedStatusCol),
+      sellerStatus: cell(row, sellerStatusCol),
+    });
+  }
+
+  listings.reverse(); // newest first — mirrors the sheet's own append order reversed
+  return jsonResponse({ success: true, listings: listings });
+}
+
+function handleSetListingStatus(body) {
+  const token = (body.token || '').toString();
+  const listingId = (body.listingId || '').toString();
+  const status = (body.status || '').toString();
+  if (!requireAdmin(token)) return jsonResponse({ success: false, error: 'Unauthorized' });
+  if (status !== 'Yes' && status !== 'No') {
+    return jsonResponse({ success: false, error: 'Invalid status' });
+  }
+
+  const sheet = SpreadsheetApp.openById(LISTINGS_SHEET_ID).getSheets()[0];
+  const data = sheet.getDataRange().getDisplayValues();
+  const headers = headerRow(data);
+  const timestampCol = headers.indexOf(COL_TIMESTAMP);
+  const publishedStatusCol = headers.indexOf(COL_PUBLISHED_STATUS);
+  if (publishedStatusCol === -1) {
+    return jsonResponse({ success: false, error: 'Listings sheet is missing the "Published Status" column.' });
+  }
+
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][timestampCol] === listingId) {
+      sheet.getRange(i + 1, publishedStatusCol + 1).setValue(status);
+      return jsonResponse({ success: true });
+    }
+  }
+
+  return jsonResponse({ success: false, error: 'Listing not found' });
 }
 
 // Adds (or updates, if the email is already there) a row on the Agents
