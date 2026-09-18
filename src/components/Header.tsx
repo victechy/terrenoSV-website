@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -24,10 +23,10 @@ export default function Header({ locale }: { locale: Locale }) {
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
         <Link
           href={localizedPath("/", locale)}
-          className="flex items-center gap-2 shrink-0"
+          className="shrink-0 font-brand text-2xl text-white sm:text-3xl"
           onClick={() => setOpen(false)}
         >
-          <Image src="/wordmark.png" alt="terrenoSV" width={1284} height={411} unoptimized className="h-8 w-auto sm:h-9" priority />
+          terreno<span className="text-accent-warm">SV</span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-7">
