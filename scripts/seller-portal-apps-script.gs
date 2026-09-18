@@ -23,9 +23,21 @@
 // 7. Send that URL + SHARED_SECRET back — they go into src/lib/portal.ts as
 //    PORTAL_ENDPOINT / PORTAL_SHARED_SECRET.
 //
-// To edit this later: Extensions > Apps Script > paste the new version >
-// Deploy > Manage deployments > pick the existing deployment > Edit (pencil)
-// > Version: New version > Deploy. The URL stays the same either way.
+// To edit this later (this includes the admin-panel additions below): paste
+// the new version into the SAME project from step 4 > Deploy > Manage
+// deployments > pick the existing deployment > Edit (pencil) > Version: New
+// version > Deploy. The URL stays the same either way — no new deployment,
+// no re-authorization needed for the admin panel specifically.
+//
+// Admin panel (list/approve/deny realtor applications) additional setup:
+// 8. On the "terrenoSV - Regístrate para Publicar (Responses)" sheet (the
+//    private one with DUI numbers — leave its sharing exactly as private as
+//    it already is), add a column with the header "Review Status" (exact
+//    spelling). Leave it blank for every row — blank means still pending.
+// 9. Copy that sheet's id out of its URL and set APPLICATION_SHEET_ID below.
+// 10. Push a new version (see above). No new authorization/trigger needed —
+//     this reuses the same deployment, login flow, and token sheet as the
+//     seller portal, just gated to ADMIN_EMAIL below.
 
 const SHARED_SECRET = 'REPLACE_ME_WITH_A_LONG_RANDOM_STRING';
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -37,6 +49,37 @@ const LISTINGS_SHEET_ID = '128JAe0bscus3dxINM0M3ImLMGtbZGC8OAH3f0nSamE0';
 const COL_TIMESTAMP = 'Timestamp';
 const COL_CONTACT_EMAIL = 'Correo electrónico de contacto (el que verán los compradores)';
 const COL_SELLER_STATUS = 'Seller Status';
+
+// Admin surface (list/approve/deny realtor applications) — gated by checking
+// the logged-in session's email against this, not a separate auth system.
+// Same spreadsheet id as AGENTS_SHEET_ID in src/lib/agents.ts.
+const ADMIN_EMAIL = 'vflores.sv@gmail.com';
+const AGENTS_SHEET_ID = '19pUngke0awIXhpgYHl80uKF7AS97Xv4DcgqTCMPtrFU';
+const COL_AGENT_EMAIL = 'Email';
+const COL_AGENT_SLUG = 'Slug';
+const COL_AGENT_DISPLAY_NAME = 'Display Name';
+const COL_AGENT_AUTO_PUBLISH = 'Auto Publish';
+
+// PLACEHOLDER — fill in with the "terrenoSV - Regístrate para Publicar
+// (Responses)" sheet's id (the private one with DUI numbers). Also add a
+// "Review Status" column header to that sheet before using the admin panel —
+// left blank = pending, this script sets it to "Approved" or "Denied".
+const APPLICATION_SHEET_ID = 'REPLACE_WITH_APPLICATION_SHEET_ID';
+const COL_APP_TIMESTAMP = 'Timestamp';
+const COL_APP_EMAIL = 'Email address';
+const COL_APP_FIRST_NAME = 'Nombre(s)';
+const COL_APP_LAST_NAME = 'Apellido(s)';
+const COL_APP_REVIEW_STATUS = 'Review Status';
+// Soft-matched (missing/renamed columns degrade to blank, not an error) —
+// double check these against your sheet's actual headers if fields show up
+// empty in the admin panel.
+const COL_APP_BUSINESS = 'Nombre de tu empresa/agencia de bienes raíces';
+const COL_APP_PHONE = 'Número de teléfono/WhatsApp';
+const COL_APP_EXPERIENCE = '¿Cuántos años de experiencia tienes vendiendo?';
+const COL_APP_REASON = '¿Por qué quieres publicar en terrenoSV?';
+const COL_APP_SOCIAL = 'Enlace a tu Facebook, Instagram, o sitio web';
+// Deliberately NOT read anywhere in this file: the DUI column. Never include
+// it in any response sent to the browser.
 
 const TOKEN_TTL_DAYS = 30;
 const ALLOWED_STATUSES = ['Pending Sale', 'Sold', 'Removed'];
@@ -65,6 +108,9 @@ function doPost(e) {
     if (body.action === 'verify-token') return handleVerifyToken(body);
     if (body.action === 'update-status') return handleUpdateStatus(body);
     if (body.action === 'update-fields') return handleUpdateFields(body);
+    if (body.action === 'list-applications') return handleListApplications(body);
+    if (body.action === 'approve-agent') return handleApproveAgent(body);
+    if (body.action === 'deny-agent') return handleDenyAgent(body);
 
     return jsonResponse({ success: false, error: 'Unknown action' });
   } catch (err) {
@@ -81,8 +127,10 @@ function handleRequestLink(body) {
   }
 
   // Deliberately the same response whether or not this email has listings —
-  // don't let the response leak which emails are sellers.
-  if (emailHasListings(email)) {
+  // don't let the response leak which emails are sellers. The admin email
+  // always gets a link too, regardless of whether it happens to have any
+  // listings of its own.
+  if (email === ADMIN_EMAIL.toLowerCase() || emailHasListings(email)) {
     const token = Utilities.getUuid() + Utilities.getUuid().replace(/-/g, '');
     // Stored as a plain epoch-ms number, not a Date — reading it back via
     // getDisplayValues() and re-parsing a formatted date string would be
@@ -207,6 +255,172 @@ function handleUpdateFields(body) {
   }
 
   return jsonResponse({ success: false, error: 'Listing not found' });
+}
+
+// Returns the admin's verified email, or writes an Unauthorized response and
+// returns null. Every admin action must call this before touching anything.
+function requireAdmin(token) {
+  const found = findToken(token);
+  if (!found || found.email !== ADMIN_EMAIL.toLowerCase()) return null;
+  return found.email;
+}
+
+function handleListApplications(body) {
+  const token = (body.token || '').toString();
+  if (!requireAdmin(token)) return jsonResponse({ success: false, error: 'Unauthorized' });
+
+  const sheet = SpreadsheetApp.openById(APPLICATION_SHEET_ID).getSheets()[0];
+  const data = sheet.getDataRange().getDisplayValues();
+  const headers = data[0];
+
+  const timestampCol = headers.indexOf(COL_APP_TIMESTAMP);
+  const emailCol = headers.indexOf(COL_APP_EMAIL);
+  const firstNameCol = headers.indexOf(COL_APP_FIRST_NAME);
+  const lastNameCol = headers.indexOf(COL_APP_LAST_NAME);
+  const reviewStatusCol = headers.indexOf(COL_APP_REVIEW_STATUS);
+  if (timestampCol === -1 || emailCol === -1 || reviewStatusCol === -1) {
+    return jsonResponse({
+      success: false,
+      error: 'Application sheet is missing a required column (Timestamp / Email address / Review Status) — see setup comment at the top of this file.',
+    });
+  }
+  // Soft-matched — a missing/renamed column just means that field comes back
+  // blank in the admin panel, not a hard failure.
+  const businessCol = headers.indexOf(COL_APP_BUSINESS);
+  const phoneCol = headers.indexOf(COL_APP_PHONE);
+  const experienceCol = headers.indexOf(COL_APP_EXPERIENCE);
+  const reasonCol = headers.indexOf(COL_APP_REASON);
+  const socialCol = headers.indexOf(COL_APP_SOCIAL);
+  const cell = function (row, col) {
+    return col === -1 ? '' : row[col] || '';
+  };
+
+  const applications = [];
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    if ((row[reviewStatusCol] || '').trim() !== '') continue; // already approved/denied
+
+    applications.push({
+      id: row[timestampCol],
+      email: cell(row, emailCol),
+      firstName: cell(row, firstNameCol),
+      lastName: cell(row, lastNameCol),
+      businessName: cell(row, businessCol),
+      phone: cell(row, phoneCol),
+      experience: cell(row, experienceCol),
+      reason: cell(row, reasonCol),
+      social: cell(row, socialCol),
+    });
+  }
+
+  return jsonResponse({ success: true, applications: applications });
+}
+
+function handleApproveAgent(body) {
+  const token = (body.token || '').toString();
+  const applicationId = (body.applicationId || '').toString();
+  if (!requireAdmin(token)) return jsonResponse({ success: false, error: 'Unauthorized' });
+
+  const appSheet = SpreadsheetApp.openById(APPLICATION_SHEET_ID).getSheets()[0];
+  const data = appSheet.getDataRange().getDisplayValues();
+  const headers = data[0];
+  const timestampCol = headers.indexOf(COL_APP_TIMESTAMP);
+  const emailCol = headers.indexOf(COL_APP_EMAIL);
+  const firstNameCol = headers.indexOf(COL_APP_FIRST_NAME);
+  const lastNameCol = headers.indexOf(COL_APP_LAST_NAME);
+  const reviewStatusCol = headers.indexOf(COL_APP_REVIEW_STATUS);
+
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][timestampCol] !== applicationId) continue;
+
+    const email = (data[i][emailCol] || '').trim().toLowerCase();
+    const firstName = (data[i][firstNameCol] || '').trim();
+    const lastName = (data[i][lastNameCol] || '').trim();
+    if (!email) return jsonResponse({ success: false, error: 'Application has no email' });
+
+    appSheet.getRange(i + 1, reviewStatusCol + 1).setValue('Approved');
+    upsertAgent(email, (firstName + ' ' + lastName).trim());
+    return jsonResponse({ success: true });
+  }
+
+  return jsonResponse({ success: false, error: 'Application not found' });
+}
+
+function handleDenyAgent(body) {
+  const token = (body.token || '').toString();
+  const applicationId = (body.applicationId || '').toString();
+  if (!requireAdmin(token)) return jsonResponse({ success: false, error: 'Unauthorized' });
+
+  const appSheet = SpreadsheetApp.openById(APPLICATION_SHEET_ID).getSheets()[0];
+  const data = appSheet.getDataRange().getDisplayValues();
+  const headers = data[0];
+  const timestampCol = headers.indexOf(COL_APP_TIMESTAMP);
+  const reviewStatusCol = headers.indexOf(COL_APP_REVIEW_STATUS);
+
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][timestampCol] !== applicationId) continue;
+    appSheet.getRange(i + 1, reviewStatusCol + 1).setValue('Denied');
+    return jsonResponse({ success: true });
+  }
+
+  return jsonResponse({ success: false, error: 'Application not found' });
+}
+
+// Adds (or updates, if the email is already there) a row on the Agents
+// sheet with Auto Publish = Yes. This is the only place that writes to that
+// sheet, so slug uniqueness is enforced right here.
+function upsertAgent(email, displayName) {
+  const sheet = SpreadsheetApp.openById(AGENTS_SHEET_ID).getSheets()[0];
+  const data = sheet.getDataRange().getDisplayValues();
+  const headers = data[0];
+  const emailCol = headers.indexOf(COL_AGENT_EMAIL);
+  const slugCol = headers.indexOf(COL_AGENT_SLUG);
+  const nameCol = headers.indexOf(COL_AGENT_DISPLAY_NAME);
+  const autoPublishCol = headers.indexOf(COL_AGENT_AUTO_PUBLISH);
+
+  const existingSlugs = {};
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][slugCol]) existingSlugs[data[i][slugCol]] = true;
+    if ((data[i][emailCol] || '').toLowerCase().trim() === email) {
+      sheet.getRange(i + 1, nameCol + 1).setValue(displayName);
+      sheet.getRange(i + 1, autoPublishCol + 1).setValue('Yes');
+      if (!data[i][slugCol]) {
+        sheet.getRange(i + 1, slugCol + 1).setValue(uniqueSlug(displayName, existingSlugs));
+      }
+      return;
+    }
+  }
+
+  const slug = uniqueSlug(displayName, existingSlugs);
+  const newRow = [];
+  newRow[emailCol] = email;
+  newRow[slugCol] = slug;
+  newRow[nameCol] = displayName;
+  newRow[autoPublishCol] = 'Yes';
+  sheet.appendRow(newRow);
+}
+
+function uniqueSlug(text, existingSlugs) {
+  const base = slugify(text) || 'agente';
+  let candidate = base;
+  let n = 2;
+  while (existingSlugs[candidate]) {
+    candidate = base + '-' + n;
+    n++;
+  }
+  existingSlugs[candidate] = true;
+  return candidate;
+}
+
+function slugify(text) {
+  return text
+    .toString()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '') // strip accents
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60);
 }
 
 function emailHasListings(email) {

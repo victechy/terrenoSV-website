@@ -80,27 +80,85 @@ export async function updateListingFields(
   }
 }
 
-export function loadPortalToken(): string | null {
+export type Application = {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  businessName: string;
+  phone: string;
+  experience: string;
+  reason: string;
+  social: string;
+};
+
+export async function listApplications(token: string): Promise<{ success: boolean; applications?: Application[]; error?: string }> {
+  try {
+    return await callPortal<{ success: boolean; applications?: Application[]; error?: string }>({
+      action: "list-applications",
+      token,
+    });
+  } catch {
+    return { success: false, error: "network" };
+  }
+}
+
+export async function approveAgent(token: string, applicationId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    return await callPortal<{ success: boolean; error?: string }>({
+      action: "approve-agent",
+      token,
+      applicationId,
+    });
+  } catch {
+    return { success: false, error: "network" };
+  }
+}
+
+export async function denyAgent(token: string, applicationId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    return await callPortal<{ success: boolean; error?: string }>({
+      action: "deny-agent",
+      token,
+      applicationId,
+    });
+  } catch {
+    return { success: false, error: "network" };
+  }
+}
+
+function loadToken(storageKey: string): string | null {
   if (typeof window === "undefined") return null;
   try {
-    return window.localStorage.getItem(TOKEN_STORAGE_KEY);
+    return window.localStorage.getItem(storageKey);
   } catch {
     return null;
   }
 }
 
-export function savePortalToken(token: string) {
+function saveToken(storageKey: string, token: string) {
   try {
-    window.localStorage.setItem(TOKEN_STORAGE_KEY, token);
+    window.localStorage.setItem(storageKey, token);
   } catch {
     // storage unavailable (private browsing, quota) — still works for this session
   }
 }
 
-export function clearPortalToken() {
+function clearToken(storageKey: string) {
   try {
-    window.localStorage.removeItem(TOKEN_STORAGE_KEY);
+    window.localStorage.removeItem(storageKey);
   } catch {
     // ignore
   }
 }
+
+export const loadPortalToken = () => loadToken(TOKEN_STORAGE_KEY);
+export const savePortalToken = (token: string) => saveToken(TOKEN_STORAGE_KEY, token);
+export const clearPortalToken = () => clearToken(TOKEN_STORAGE_KEY);
+
+// Separate storage key so an admin session and a seller session don't
+// collide in the same browser (e.g. testing both as the same person).
+const ADMIN_TOKEN_STORAGE_KEY = "terrenosv_admin_token";
+export const loadAdminToken = () => loadToken(ADMIN_TOKEN_STORAGE_KEY);
+export const saveAdminToken = (token: string) => saveToken(ADMIN_TOKEN_STORAGE_KEY, token);
+export const clearAdminToken = () => clearToken(ADMIN_TOKEN_STORAGE_KEY);
