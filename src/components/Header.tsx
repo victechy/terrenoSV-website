@@ -18,13 +18,21 @@ export default function Header({ locale }: { locale: Locale }) {
 
   const isActive = (href: string) => pathname === href || pathname === `${href}/`;
 
+  const homeHref = localizedPath("/", locale);
+  const isHome = pathname === homeHref || pathname === `${homeHref}/`;
+
+  const handleLogoClick = () => {
+    setOpen(false);
+    if (isHome) window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
     <header className="sticky top-0 z-40 bg-brand-blue shadow-[0_1px_0_rgba(255,255,255,0.08),0_4px_12px_rgba(0,0,0,0.12)]">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
         <Link
-          href={localizedPath("/", locale)}
+          href={homeHref}
           className="shrink-0 font-brand text-2xl text-white sm:text-3xl"
-          onClick={() => setOpen(false)}
+          onClick={handleLogoClick}
         >
           terreno<span className="text-accent-warm">SV</span>
         </Link>
