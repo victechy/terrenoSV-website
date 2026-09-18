@@ -191,7 +191,7 @@ function handleUpdateStatus(body) {
 
   const listingsSheet = SpreadsheetApp.openById(LISTINGS_SHEET_ID).getSheets()[0];
   const data = listingsSheet.getDataRange().getDisplayValues();
-  const headers = data[0];
+  const headers = headerRow(data);
   const timestampCol = headers.indexOf(COL_TIMESTAMP);
   const emailCol = headers.indexOf(COL_CONTACT_EMAIL);
   const statusCol = headers.indexOf(COL_SELLER_STATUS);
@@ -246,7 +246,7 @@ function handleUpdateFields(body) {
 
   const listingsSheet = SpreadsheetApp.openById(LISTINGS_SHEET_ID).getSheets()[0];
   const data = listingsSheet.getDataRange().getDisplayValues();
-  const headers = data[0];
+  const headers = headerRow(data);
   const timestampCol = headers.indexOf(COL_TIMESTAMP);
   const emailCol = headers.indexOf(COL_CONTACT_EMAIL);
 
@@ -279,7 +279,7 @@ function handleListApplications(body) {
 
   const sheet = SpreadsheetApp.openById(APPLICATION_SHEET_ID).getSheets()[0];
   const data = sheet.getDataRange().getDisplayValues();
-  const headers = data[0];
+  const headers = headerRow(data);
 
   const timestampCol = headers.indexOf(COL_APP_TIMESTAMP);
   const emailCol = headers.indexOf(COL_APP_EMAIL);
@@ -331,7 +331,7 @@ function handleApproveAgent(body) {
 
   const appSheet = SpreadsheetApp.openById(APPLICATION_SHEET_ID).getSheets()[0];
   const data = appSheet.getDataRange().getDisplayValues();
-  const headers = data[0];
+  const headers = headerRow(data);
   const timestampCol = headers.indexOf(COL_APP_TIMESTAMP);
   const emailCol = headers.indexOf(COL_APP_EMAIL);
   const firstNameCol = headers.indexOf(COL_APP_FIRST_NAME);
@@ -361,7 +361,7 @@ function handleDenyAgent(body) {
 
   const appSheet = SpreadsheetApp.openById(APPLICATION_SHEET_ID).getSheets()[0];
   const data = appSheet.getDataRange().getDisplayValues();
-  const headers = data[0];
+  const headers = headerRow(data);
   const timestampCol = headers.indexOf(COL_APP_TIMESTAMP);
   const reviewStatusCol = headers.indexOf(COL_APP_REVIEW_STATUS);
 
@@ -380,7 +380,7 @@ function handleDenyAgent(body) {
 function upsertAgent(email, displayName) {
   const sheet = SpreadsheetApp.openById(AGENTS_SHEET_ID).getSheets()[0];
   const data = sheet.getDataRange().getDisplayValues();
-  const headers = data[0];
+  const headers = headerRow(data);
   const emailCol = headers.indexOf(COL_AGENT_EMAIL);
   const slugCol = headers.indexOf(COL_AGENT_SLUG);
   const nameCol = headers.indexOf(COL_AGENT_DISPLAY_NAME);
@@ -434,7 +434,7 @@ function slugify(text) {
 function emailHasListings(email) {
   const sheet = SpreadsheetApp.openById(LISTINGS_SHEET_ID).getSheets()[0];
   const data = sheet.getDataRange().getDisplayValues();
-  const headers = data[0];
+  const headers = headerRow(data);
   const emailCol = headers.indexOf(COL_CONTACT_EMAIL);
   for (let i = 1; i < data.length; i++) {
     if ((data[i][emailCol] || '').toLowerCase().trim() === email) return true;
@@ -478,4 +478,14 @@ function doGet(e) {
 function jsonResponse(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+// Trims every header cell before any indexOf lookup against it — a header
+// with a stray trailing/leading space (easy to introduce by accident in a
+// form question or a sheet header) would otherwise silently fail to match
+// and that column would just come back blank everywhere, with no error.
+function headerRow(data) {
+  return data[0].map(function (h) {
+    return (h || '').toString().trim();
+  });
 }
