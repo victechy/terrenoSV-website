@@ -340,6 +340,7 @@ function handleApproveAgent(body) {
   const emailCol = headers.indexOf(COL_APP_EMAIL);
   const firstNameCol = headers.indexOf(COL_APP_FIRST_NAME);
   const lastNameCol = headers.indexOf(COL_APP_LAST_NAME);
+  const phoneCol = headers.indexOf(COL_APP_PHONE);
   const reviewStatusCol = headers.indexOf(COL_APP_REVIEW_STATUS);
 
   for (let i = 1; i < data.length; i++) {
@@ -348,14 +349,68 @@ function handleApproveAgent(body) {
     const email = (data[i][emailCol] || '').trim().toLowerCase();
     const firstName = (data[i][firstNameCol] || '').trim();
     const lastName = (data[i][lastNameCol] || '').trim();
+    const phone = phoneCol === -1 ? '' : (data[i][phoneCol] || '').trim();
     if (!email) return jsonResponse({ success: false, error: 'Application has no email' });
 
     appSheet.getRange(i + 1, reviewStatusCol + 1).setValue('Approved');
     upsertAgent(email, (firstName + ' ' + lastName).trim());
+
+    try {
+      sendApprovalEmail(email, firstName, (firstName + ' ' + lastName).trim(), phone);
+    } catch (mailErr) {
+      // swallow — approval itself already succeeded and shouldn't be undone
+      // by a failed congratulations email.
+    }
+
     return jsonResponse({ success: true });
   }
 
   return jsonResponse({ success: false, error: 'Application not found' });
+}
+
+// The "Publica tu Propiedad" form — entry ids read directly off the live
+// form's own FB_PUBLIC_LOAD_DATA_ (Forms doesn't expose these any other
+// way). Re-extract them the same way if this form is ever edited and IDs
+// need re-checking: open the form, DevTools console,
+// FB_PUBLIC_LOAD_DATA_[1][1] lists every question with its entry id(s).
+const PROPERTY_FORM_BASE_URL =
+  'https://docs.google.com/forms/d/e/1FAIpQLSfYtJ6ugawIdq7arZTZzLvefp6ssj7oZA6P3gA-KGUAl6FGLg/viewform';
+const FORM_ENTRY_NAME = 'entry.1438705812'; // "Tu nombre completo"
+const FORM_ENTRY_EMAIL = 'entry.155736615'; // "Correo electrónico de contacto..."
+const FORM_ENTRY_PHONE = 'entry.850593457'; // "Número de teléfono/WhatsApp"
+const FORM_ENTRY_CONTACT_PREF = 'entry.1974201093'; // "¿Cómo prefieres que te contacten?"
+const FORM_CONTACT_PREF_WHATSAPP = '📞WhatsApp'; // "📞WhatsApp" — must match the option text exactly
+// Deliberately NOT prefilled: the "Confirmo que tengo autorización..."
+// checkbox (entry.800152054) — left unchecked on purpose, they need to
+// actively confirm it themselves for each property they list.
+
+function buildPrefilledFormUrl(name, email, phone) {
+  const params = [
+    FORM_ENTRY_NAME + '=' + encodeURIComponent(name),
+    FORM_ENTRY_EMAIL + '=' + encodeURIComponent(email),
+    FORM_ENTRY_CONTACT_PREF + '=' + encodeURIComponent(FORM_CONTACT_PREF_WHATSAPP),
+  ];
+  if (phone) params.push(FORM_ENTRY_PHONE + '=' + encodeURIComponent(phone));
+  return PROPERTY_FORM_BASE_URL + '?usp=pp_url&' + params.join('&');
+}
+
+function sendApprovalEmail(email, firstName, fullName, phone) {
+  const formUrl = buildPrefilledFormUrl(fullName, email, phone);
+  const greetingName = firstName || fullName || 'agente';
+
+  const subject = '¡Bienvenido a terrenoSV!';
+  const body =
+    'Hola ' + greetingName + ',\n\n' +
+    'Gracias por tu confianza y por sumarte a terrenoSV. Es un placer contar contigo en este proyecto tan emocionante, ' +
+    'y sabemos que juntos será todo un éxito.\n\n' +
+    'Ya puedes empezar a publicar tus propiedades con este enlace (ya viene con tu información de contacto pre-llenada):\n\n' +
+    formUrl + '\n\n' +
+    'Te deseo el mayor de los éxitos en esta y en todas tus futuras aventuras.\n\n' +
+    'Un saludo cordial,\n' +
+    'Victor Flores\n' +
+    'Fundador, terrenoSV';
+
+  GmailApp.sendEmail(email, subject, body, { from: FROM_ALIAS, name: 'Victor Flores - terrenoSV' });
 }
 
 function handleDenyAgent(body) {
