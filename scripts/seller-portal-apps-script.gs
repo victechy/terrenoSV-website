@@ -398,13 +398,16 @@ function sendApprovalEmail(email, firstName, fullName, phone) {
   const formUrl = buildPrefilledFormUrl(fullName, email, phone);
   const greetingName = firstName || fullName || 'agente';
 
+  // Voseo ("con vos", "podés") deliberately, not "contigo"/"puedes" — Salvadoran
+  // Spanish, not neutral/Mexican-leaning Latin American Spanish.
   const subject = '¡Bienvenido a terrenoSV!';
   const body =
     'Hola ' + greetingName + ',\n\n' +
-    'Gracias por tu confianza y por sumarte a terrenoSV. Es un placer contar contigo en este proyecto tan emocionante, ' +
+    'Gracias por tu confianza y por sumarte a terrenoSV. Es un placer contar con vos en este proyecto tan emocionante, ' +
     'y sabemos que juntos será todo un éxito.\n\n' +
-    'Ya puedes empezar a publicar tus propiedades con este enlace (ya viene con tu información de contacto pre-llenada):\n\n' +
+    'Ya podés empezar a publicar tus propiedades con este enlace (ya viene con tu información de contacto pre-llenada):\n\n' +
     formUrl + '\n\n' +
+    'Cualquier duda, no dudes en contactarme a mi número de WhatsApp personal: 6681-1817.\n\n' +
     'Te deseo el mayor de los éxitos en esta y en todas tus futuras aventuras.\n\n' +
     'Un saludo cordial,\n' +
     'Victor Flores\n' +
