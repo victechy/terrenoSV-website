@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Listing, fetchListings } from "@/lib/listings";
+import { useMemo, useState } from "react";
+import { Listing } from "@/lib/listings";
 import { Locale, getDictionary } from "@/lib/dictionary";
 import { useFavorites } from "@/lib/likes";
 import ListingCard from "./ListingCard";
@@ -16,9 +16,11 @@ export default function ListingsBrowser({
   initialListings: Listing[];
 }) {
   const dict = getDictionary(locale);
-  const [listings, setListings] = useState(initialListings);
-  // Starts true: the refresh effect below always kicks off a fetch on mount.
-  const [refreshing, setRefreshing] = useState(true);
+  // Deliberately NOT re-fetched client-side: a listing's detail page is a
+  // static file only generated at the last build, so showing a card here
+  // before the next rebuild would link to a 404. Card and detail page now
+  // only ever appear together, from the same build.
+  const listings = initialListings;
 
   const [search, setSearch] = useState("");
   const [propertyType, setPropertyType] = useState("all");
@@ -28,25 +30,6 @@ export default function ListingsBrowser({
   const [favoritesOnly, setFavoritesOnly] = useState(false);
 
   const { isFavorite } = useFavorites();
-
-  // The static page shipped whatever was live at build time (good for SEO
-  // and first paint); re-fetch the same public sheet client-side once
-  // mounted so a listing approved since the last build still shows up
-  // without waiting on a rebuild — same "live data" feel as the app.
-  useEffect(() => {
-    let cancelled = false;
-    fetchListings()
-      .then((fresh) => {
-        if (!cancelled) setListings(fresh);
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (!cancelled) setRefreshing(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const propertyTypes = useMemo(
     () => Array.from(new Set(listings.map((l) => l.propertyType).filter(Boolean))).sort(),
@@ -153,10 +136,7 @@ export default function ListingsBrowser({
       </div>
 
       <div className="mt-4 flex items-center justify-between text-sm text-foreground-muted">
-        <span>
-          {dict.listings.resultsCount(filtered.length)}
-          {refreshing && " · …"}
-        </span>
+        <span>{dict.listings.resultsCount(filtered.length)}</span>
         {(search || propertyType !== "all" || transaction !== "all" || department !== "all" || favoritesOnly) && (
           <button type="button" onClick={clearFilters} className="font-medium text-primary hover:underline">
             {dict.listings.clearFilters}
