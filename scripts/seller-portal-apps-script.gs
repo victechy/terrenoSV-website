@@ -79,9 +79,9 @@ const COL_APP_REVIEW_STATUS = 'Review Status';
 // empty in the admin panel.
 const COL_APP_BUSINESS = 'Nombre de tu empresa/agencia de bienes raíces';
 const COL_APP_PHONE = 'Número de teléfono/WhatsApp';
-const COL_APP_EXPERIENCE = '¿Cuántos años de experiencia tienes vendiendo?';
+const COL_APP_EXPERIENCE = '¿Cuántos años de experiencia tienes vendiendo o rentando propiedades?';
 const COL_APP_REASON = '¿Por qué quieres publicar en terrenoSV?';
-const COL_APP_SOCIAL = 'Enlace a tu Facebook, Instagram, o sitio web';
+const COL_APP_SOCIAL = 'Enlace a tu Facebook, Instagram, o sitio web de negocio (si tienes)';
 // Deliberately NOT read anywhere in this file: the DUI column. Never include
 // it in any response sent to the browser.
 
