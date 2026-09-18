@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import AdminView from "@/components/views/AdminView";
 
 export const metadata: Metadata = {
-  title: "Panel de administrador",
+  title: "Admin panel",
   robots: { index: false, follow: false },
 };
 

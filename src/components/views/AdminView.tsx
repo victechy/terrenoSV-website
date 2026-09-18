@@ -55,9 +55,9 @@ export default function AdminView() {
       listApplications(candidate)
         .then((data) => {
           if (data.success) setApplications(data.applications || []);
-          else setListError(data.error || "No se pudieron cargar las solicitudes.");
+          else setListError(data.error || "Couldn't load applications.");
         })
-        .catch(() => setListError("No se pudieron cargar las solicitudes."))
+        .catch(() => setListError("Couldn't load applications."))
         .finally(() => setPhase("dashboard"));
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -84,7 +84,7 @@ export default function AdminView() {
   if (phase === "loading") {
     return (
       <div className="flex min-h-[60vh] items-center justify-center px-4">
-        <p className="text-sm text-foreground-muted">Cargando…</p>
+        <p className="text-sm text-foreground-muted">Loading…</p>
       </div>
     );
   }
@@ -99,35 +99,33 @@ export default function AdminView() {
 
           {phase === "link-sent" && (
             <>
-              <h1 className="text-lg font-bold text-foreground">Revisa tu correo</h1>
+              <h1 className="text-lg font-bold text-foreground">Check your email</h1>
               <p className="mt-2 text-sm text-foreground-muted">
-                Te enviamos un enlace de acceso a <strong className="text-foreground">{ADMIN_EMAIL}</strong>.
+                We sent a login link to <strong className="text-foreground">{ADMIN_EMAIL}</strong>.
               </p>
             </>
           )}
 
           {phase === "unauthorized" && (
             <>
-              <h1 className="text-lg font-bold text-foreground">Acceso no autorizado</h1>
+              <h1 className="text-lg font-bold text-foreground">Unauthorized</h1>
               <p className="mt-2 text-sm text-foreground-muted">
-                Este panel es solo para el administrador de terrenoSV.
+                This panel is for the terrenoSV administrator only.
               </p>
             </>
           )}
 
           {phase === "login" && (
             <>
-              <h1 className="text-lg font-bold text-foreground">Panel de administrador</h1>
-              <p className="mt-2 text-sm text-foreground-muted">
-                Recibe un enlace de acceso en {ADMIN_EMAIL}.
-              </p>
+              <h1 className="text-lg font-bold text-foreground">Admin panel</h1>
+              <p className="mt-2 text-sm text-foreground-muted">Get a login link sent to {ADMIN_EMAIL}.</p>
               <button
                 type="button"
                 onClick={handleRequestLink}
                 disabled={submitting}
                 className="mt-6 w-full rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:opacity-60"
               >
-                {submitting ? "Enviando…" : "Enviar enlace de acceso"}
+                {submitting ? "Sending…" : "Send login link"}
               </button>
             </>
           )}
@@ -140,22 +138,22 @@ export default function AdminView() {
     <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-extrabold tracking-tight text-foreground">Solicitudes de agentes</h1>
-          <p className="mt-0.5 text-sm text-foreground-muted">Panel de administrador</p>
+          <h1 className="text-xl font-extrabold tracking-tight text-foreground">Agent applications</h1>
+          <p className="mt-0.5 text-sm text-foreground-muted">Admin panel</p>
         </div>
         <button
           type="button"
           onClick={handleLogout}
           className="shrink-0 rounded-lg border border-border px-3 py-2 text-sm font-semibold text-foreground-muted hover:border-primary hover:text-primary"
         >
-          Cerrar sesión
+          Log out
         </button>
       </div>
 
       {listError && <p className="mt-6 text-sm text-red-600">{listError}</p>}
 
       {!listError && applications.length === 0 && (
-        <p className="mt-10 text-center text-sm text-foreground-muted">No hay solicitudes pendientes.</p>
+        <p className="mt-10 text-center text-sm text-foreground-muted">No pending applications.</p>
       )}
 
       <div className="mt-6 flex flex-col gap-3">
@@ -190,7 +188,7 @@ function ApplicationCard({
     if (res.success) {
       onDecided();
     } else {
-      setError(res.error || "No se pudo guardar. Intenta de nuevo.");
+      setError(res.error || "Couldn't save. Try again.");
     }
   };
 
@@ -204,16 +202,14 @@ function ApplicationCard({
       </div>
 
       <dl className="mt-3 grid grid-cols-1 gap-x-4 gap-y-1.5 border-t border-border pt-3 text-sm sm:grid-cols-2">
-        {application.businessName && (
-          <Field label="Empresa/agencia" value={application.businessName} />
-        )}
-        {application.phone && <Field label="Teléfono" value={application.phone} />}
-        {application.experience && <Field label="Experiencia" value={application.experience} />}
-        {application.social && <Field label="Redes/sitio" value={application.social} />}
+        {application.businessName && <Field label="Business/agency" value={application.businessName} />}
+        {application.phone && <Field label="Phone" value={application.phone} />}
+        {application.experience && <Field label="Experience" value={application.experience} />}
+        {application.social && <Field label="Social/website" value={application.social} />}
       </dl>
       {application.reason && (
         <p className="mt-2 text-sm text-foreground-muted">
-          <span className="font-medium text-foreground">Por qué quiere publicar: </span>
+          <span className="font-medium text-foreground">Why they want to publish: </span>
           {application.reason}
         </p>
       )}
@@ -221,8 +217,8 @@ function ApplicationCard({
       {confirming ? (
         <div className="mt-4 rounded-lg bg-surface-muted p-3">
           <p className="text-sm text-foreground">
-            ¿Confirmas {confirming === "approve" ? "aprobar" : "rechazar"} a <strong>{fullName}</strong>?
-            {confirming === "approve" && " Se agregará a tu lista de agentes con publicación automática."}
+            Confirm {confirming === "approve" ? "approving" : "denying"} <strong>{fullName}</strong>?
+            {confirming === "approve" && " They'll be added to your agents list with auto-publish enabled."}
           </p>
           {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
           <div className="mt-3 flex gap-2">
@@ -232,7 +228,7 @@ function ApplicationCard({
               onClick={() => confirm(confirming)}
               className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
             >
-              {saving ? "Guardando…" : "Sí, confirmar"}
+              {saving ? "Saving…" : "Yes, confirm"}
             </button>
             <button
               type="button"
@@ -240,7 +236,7 @@ function ApplicationCard({
               onClick={() => setConfirming(null)}
               className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground-muted"
             >
-              Cancelar
+              Cancel
             </button>
           </div>
         </div>
@@ -251,14 +247,14 @@ function ApplicationCard({
             onClick={() => setConfirming("approve")}
             className="rounded-lg bg-success px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
           >
-            Aprobar
+            Approve
           </button>
           <button
             type="button"
             onClick={() => setConfirming("deny")}
             className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground-muted hover:border-red-400 hover:text-red-600"
           >
-            Rechazar
+            Deny
           </button>
         </div>
       )}
