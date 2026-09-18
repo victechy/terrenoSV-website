@@ -407,7 +407,7 @@ function sendApprovalEmail(email, firstName, fullName, phone) {
     'y sabemos que juntos será todo un éxito.\n\n' +
     'Ya podés empezar a publicar tus propiedades con este enlace (ya viene con tu información de contacto pre-llenada):\n\n' +
     formUrl + '\n\n' +
-    'Cualquier duda, no dudes en contactarme a mi número de WhatsApp personal: 6681-1817.\n\n' +
+    'Cualquier duda, no dudes en contactarme a mi número de WhatsApp personal: +503 6681-1817.\n\n' +
     'Te deseo el mayor de los éxitos en esta y en todas tus futuras aventuras.\n\n' +
     'Un saludo cordial,\n' +
     'Victor Flores\n' +
