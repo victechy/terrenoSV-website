@@ -148,16 +148,18 @@ function handleRequestLink(body) {
     try {
       // The admin email always lands on /admin, not /portal — same token
       // works on either page, but there's no reason to make the admin land
-      // somewhere they then have to navigate away from.
-      const destination = email === ADMIN_EMAIL.toLowerCase() ? '/admin' : '/portal';
+      // somewhere they then have to navigate away from. Admin also gets the
+      // email in English; sellers get Spanish, same as the rest of /portal.
+      const isAdmin = email === ADMIN_EMAIL.toLowerCase();
+      const destination = isAdmin ? '/admin' : '/portal';
       const link = SITE_ORIGIN + destination + '?token=' + encodeURIComponent(token);
-      GmailApp.sendEmail(
-        email,
-        'Tu acceso a terrenoSV',
-        'Entra a tus publicaciones con este enlace (valido por ' + TOKEN_TTL_DAYS + ' dias):\n\n' + link +
-          '\n\nSi no solicitaste esto, puedes ignorar este correo.\n\n- terrenoSV',
-        { from: FROM_ALIAS, name: 'terrenoSV' }
-      );
+      const subject = isAdmin ? 'Your terrenoSV access' : 'Tu acceso a terrenoSV';
+      const body = isAdmin
+        ? 'Log in with this link (valid for ' + TOKEN_TTL_DAYS + ' days):\n\n' + link +
+          "\n\nIf you didn't request this, you can ignore this email.\n\n- terrenoSV"
+        : 'Entra a tus publicaciones con este enlace (valido por ' + TOKEN_TTL_DAYS + ' dias):\n\n' + link +
+          '\n\nSi no solicitaste esto, puedes ignorar este correo.\n\n- terrenoSV';
+      GmailApp.sendEmail(email, subject, body, { from: FROM_ALIAS, name: 'terrenoSV' });
     } catch (mailErr) {
       // swallow — token still works if they already had a prior email, and
       // we don't want to reveal send failures to the caller either.
