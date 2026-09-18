@@ -1,11 +1,14 @@
+"use client";
+
 import Link from "next/link";
 import { Listing } from "@/lib/listings";
+import { useLiveListings } from "@/lib/useLiveListings";
 import { Locale, localizedPath } from "@/lib/dictionary";
 import ListingCard from "./ListingCard";
 
 export default function ListingsTeaser({
   locale,
-  listings,
+  listings: initialListings,
   title,
   subtitle,
   viewAllLabel,
@@ -20,6 +23,8 @@ export default function ListingsTeaser({
   noListingsLabel?: string;
   count?: number;
 }) {
+  const listings = useLiveListings(initialListings);
+
   return (
     <div>
       <div className="flex items-end justify-between">

@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Listing, fetchListings } from "@/lib/listings";
+import { useMemo, useState } from "react";
+import { Listing } from "@/lib/listings";
+import { useLiveListings } from "@/lib/useLiveListings";
 import { Locale, getDictionary } from "@/lib/dictionary";
 import { useFavorites } from "@/lib/likes";
 import ListingCard from "./ListingCard";
@@ -16,30 +17,7 @@ export default function ListingsBrowser({
   initialListings: Listing[];
 }) {
   const dict = getDictionary(locale);
-  const [listings, setListings] = useState(initialListings);
-
-  // Re-fetches the live sheet once on mount, but only ever REMOVES cards
-  // from the build-time set — never adds one. A listing's detail page is a
-  // static file only generated at the last build, so a brand-new listing
-  // still can't show a card here until it actually has one (avoids the
-  // 404-on-click problem). But an admin rejection or a seller marking their
-  // own listing sold/removed should disappear immediately, not wait on a
-  // rebuild — its detail page already existed, it just shouldn't be browsable.
-  useEffect(() => {
-    const builtIds = new Set(initialListings.map((l) => l.id));
-    let cancelled = false;
-    fetchListings()
-      .then((fresh) => {
-        if (cancelled) return;
-        const stillLiveIds = new Set(fresh.map((l) => l.id));
-        setListings((prev) => prev.filter((l) => stillLiveIds.has(l.id) && builtIds.has(l.id)));
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const listings = useLiveListings(initialListings);
 
   const [search, setSearch] = useState("");
   const [propertyType, setPropertyType] = useState("all");
