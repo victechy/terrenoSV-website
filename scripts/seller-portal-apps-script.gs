@@ -86,6 +86,13 @@ const COL_AGENT_AUTO_PUBLISH = 'Auto Publish';
 // Lives only here, server-side — never shipped to the browser like the
 // other secrets in this project. Fine-grained PAT scoped to just this repo
 // with Actions: Read and write. See setup steps 11-13 above.
+//
+// UNLIKE every other secret in this file: do NOT put the real value here in
+// the repo copy, and do not commit it. This repo is PUBLIC — SHARED_SECRET
+// and APPLICATION_SHEET_ID above are low-stakes if seen (narrow, sheet-
+// scoped Apps Script actions), but this token grants write access to this
+// repo's GitHub Actions. Paste the real value directly into the live Apps
+// Script editor only, never into this file.
 const GITHUB_TOKEN = 'REPLACE_WITH_GITHUB_PERSONAL_ACCESS_TOKEN';
 const GITHUB_REPO = 'victechy/terrenoSV-website';
 const GITHUB_WORKFLOW_FILE = 'deploy.yml';
