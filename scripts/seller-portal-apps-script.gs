@@ -39,7 +39,11 @@
 //     this reuses the same deployment, login flow, and token sheet as the
 //     seller portal, just gated to ADMIN_EMAIL below.
 
-const SHARED_SECRET = 'REPLACE_ME_WITH_A_LONG_RANDOM_STRING';
+// Keep this in sync with the live deployment and with PORTAL_SHARED_SECRET
+// in src/lib/portal.ts. Deliberately the real value, not a placeholder —
+// pasting a placeholder here over the live deployment silently breaks every
+// request from the site (already happened once).
+const SHARED_SECRET = '!A@S#D$F5g6h7j8kV1ctor@nni@';
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const FROM_ALIAS = 'app@terrenosv.org';
 const SITE_ORIGIN = 'https://terrenosv.org';
@@ -140,7 +144,11 @@ function handleRequestLink(body) {
     getTokenSheet().appendRow([token, email, expiresAtMs]);
 
     try {
-      const link = SITE_ORIGIN + '/portal?token=' + encodeURIComponent(token);
+      // The admin email always lands on /admin, not /portal — same token
+      // works on either page, but there's no reason to make the admin land
+      // somewhere they then have to navigate away from.
+      const destination = email === ADMIN_EMAIL.toLowerCase() ? '/admin' : '/portal';
+      const link = SITE_ORIGIN + destination + '?token=' + encodeURIComponent(token);
       GmailApp.sendEmail(
         email,
         'Tu acceso a terrenoSV',
