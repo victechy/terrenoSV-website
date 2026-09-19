@@ -186,6 +186,7 @@ export type AdminListing = {
   sellerEmail: string;
   publishedStatus: string;
   sellerStatus: string;
+  description: string;
 };
 
 export async function listListings(token: string): Promise<{ success: boolean; listings?: AdminListing[]; error?: string }> {

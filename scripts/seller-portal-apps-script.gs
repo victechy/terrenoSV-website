@@ -637,6 +637,7 @@ function handleListListings(body) {
   const emailCol = headers.indexOf(COL_CONTACT_EMAIL);
   const publishedStatusCol = headers.indexOf(COL_PUBLISHED_STATUS);
   const sellerStatusCol = headers.indexOf(COL_SELLER_STATUS);
+  const descriptionCol = headers.indexOf(EDITABLE_COLUMNS.description);
 
   if (timestampCol === -1 || titleCol === -1 || publishedStatusCol === -1) {
     return jsonResponse({ success: false, error: 'Listings sheet is missing an expected column.' });
@@ -663,6 +664,7 @@ function handleListListings(body) {
       sellerEmail: cell(row, emailCol),
       publishedStatus: cell(row, publishedStatusCol),
       sellerStatus: cell(row, sellerStatusCol),
+      description: cell(row, descriptionCol),
     });
   }
 

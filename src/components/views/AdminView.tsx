@@ -485,8 +485,10 @@ function AdminListingRow({
 }) {
   const [saving, setSaving] = useState<"Yes" | "No" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState(false);
 
-  const photo = getImageUrls(listing.photosRaw)[0];
+  const photos = getImageUrls(listing.photosRaw);
+  const photo = photos[0];
   const statusMeta = LISTING_STATUS_META[listing.publishedStatus] || LISTING_STATUS_META[""];
   const priceNumber = parseFloat(listing.price);
 
@@ -503,57 +505,109 @@ function AdminListingRow({
   };
 
   return (
-    <div className="flex items-start gap-3 rounded-xl bg-surface p-3 shadow-card">
-      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-surface-muted">
-        {photo ? <Image src={photo} alt="" fill unoptimized className="object-cover" sizes="64px" /> : null}
-      </div>
-
-      <div className="min-w-0 flex-1">
-        <div className="flex items-start justify-between gap-2">
-          <p className="truncate text-sm font-semibold text-foreground">{listing.title}</p>
-          <span className={`shrink-0 rounded-md px-2 py-0.5 text-xs font-semibold ${statusMeta.className}`}>
-            {statusMeta.label}
-          </span>
+    <div className="overflow-hidden rounded-xl bg-surface shadow-card">
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="flex w-full items-start gap-3 p-3 text-left"
+      >
+        <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-surface-muted">
+          {photo ? <Image src={photo} alt="" fill unoptimized className="object-cover" sizes="64px" /> : null}
         </div>
-        <p className="truncate text-sm text-foreground-muted">
-          {listing.sellerName || "—"} · {listing.sellerEmail}
-        </p>
-        <p className="mt-0.5 text-sm text-foreground-muted">
-          {Number.isFinite(priceNumber) && priceNumber > 0 ? `$${formatUsdCurrency(priceNumber)}` : "No price"}
-          {" · "}
-          {[listing.municipality, listing.department].filter(Boolean).join(", ")}
-          {listing.sellerStatus && listing.sellerStatus !== "Active" ? ` · ${listing.sellerStatus}` : ""}
-        </p>
 
-        {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
-
-        <div className="mt-2 flex gap-2">
-          <button
-            type="button"
-            disabled={saving !== null}
-            onClick={() => handleSetStatus("Yes")}
-            className={`rounded-lg px-3 py-1.5 text-xs font-semibold disabled:opacity-60 ${
-              listing.publishedStatus === "Yes"
-                ? "bg-success text-white"
-                : "border border-border text-foreground-muted hover:border-success hover:text-success"
-            }`}
-          >
-            {saving === "Yes" ? "Saving…" : "Yes"}
-          </button>
-          <button
-            type="button"
-            disabled={saving !== null}
-            onClick={() => handleSetStatus("No")}
-            className={`rounded-lg px-3 py-1.5 text-xs font-semibold disabled:opacity-60 ${
-              listing.publishedStatus === "No"
-                ? "bg-red-600 text-white"
-                : "border border-border text-foreground-muted hover:border-red-400 hover:text-red-600"
-            }`}
-          >
-            {saving === "No" ? "Saving…" : "No"}
-          </button>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <p className="truncate text-sm font-semibold text-foreground">{listing.title}</p>
+            <span className={`shrink-0 rounded-md px-2 py-0.5 text-xs font-semibold ${statusMeta.className}`}>
+              {statusMeta.label}
+            </span>
+          </div>
+          <p className="truncate text-sm text-foreground-muted">
+            {listing.sellerName || "—"} · {listing.sellerEmail}
+          </p>
+          <p className="mt-0.5 text-sm text-foreground-muted">
+            {Number.isFinite(priceNumber) && priceNumber > 0 ? `$${formatUsdCurrency(priceNumber)}` : "No price"}
+            {" · "}
+            {[listing.municipality, listing.department].filter(Boolean).join(", ")}
+            {listing.sellerStatus && listing.sellerStatus !== "Active" ? ` · ${listing.sellerStatus}` : ""}
+          </p>
         </div>
+
+        <ChevronIcon expanded={expanded} />
+      </button>
+
+      {expanded && (
+        <div className="border-t border-border px-3 pb-3 pt-3">
+          <div className="flex flex-wrap gap-2">
+            {photos.length > 0 ? (
+              photos.map((p, i) => (
+                <div key={p + i} className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-surface-muted">
+                  <Image src={p} alt="" fill unoptimized className="object-cover" sizes="80px" />
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-foreground-muted">No photos.</p>
+            )}
+          </div>
+
+          <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+            <dt className="text-foreground-muted">Property type</dt>
+            <dd className="text-foreground">{listing.propertyType || "—"}</dd>
+            <dt className="text-foreground-muted">Transaction</dt>
+            <dd className="text-foreground">{listing.transaction || "—"}</dd>
+          </dl>
+
+          {listing.description && (
+            <p className="mt-3 whitespace-pre-wrap text-sm text-foreground">{listing.description}</p>
+          )}
+        </div>
+      )}
+
+      {error && <p className="px-3 text-sm text-red-600">{error}</p>}
+
+      <div className="flex gap-2 px-3 pb-3 pt-2">
+        <button
+          type="button"
+          disabled={saving !== null}
+          onClick={() => handleSetStatus("Yes")}
+          className={`rounded-lg px-3 py-1.5 text-xs font-semibold disabled:opacity-60 ${
+            listing.publishedStatus === "Yes"
+              ? "bg-success text-white"
+              : "border border-border text-foreground-muted hover:border-success hover:text-success"
+          }`}
+        >
+          {saving === "Yes" ? "Saving…" : "Yes"}
+        </button>
+        <button
+          type="button"
+          disabled={saving !== null}
+          onClick={() => handleSetStatus("No")}
+          className={`rounded-lg px-3 py-1.5 text-xs font-semibold disabled:opacity-60 ${
+            listing.publishedStatus === "No"
+              ? "bg-red-600 text-white"
+              : "border border-border text-foreground-muted hover:border-red-400 hover:text-red-600"
+          }`}
+        >
+          {saving === "No" ? "Saving…" : "No"}
+        </button>
       </div>
     </div>
+  );
+}
+
+function ChevronIcon({ expanded }: { expanded: boolean }) {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      className={`mt-1 shrink-0 text-foreground-muted transition-transform ${expanded ? "rotate-180" : ""}`}
+      aria-hidden
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
+    </svg>
   );
 }
