@@ -97,6 +97,27 @@ export async function updateListingPhotos(
   }
 }
 
+export const MAX_LISTING_PHOTOS = 10;
+
+export async function addListingPhoto(
+  token: string,
+  listingId: string,
+  imageBase64: string,
+  mimeType: string
+): Promise<{ success: boolean; url?: string; photosRaw?: string; error?: string }> {
+  try {
+    return await callPortal<{ success: boolean; url?: string; photosRaw?: string; error?: string }>({
+      action: "add-photo",
+      token,
+      listingId,
+      imageBase64,
+      mimeType,
+    });
+  } catch {
+    return { success: false, error: "network" };
+  }
+}
+
 export type Application = {
   id: string;
   email: string;

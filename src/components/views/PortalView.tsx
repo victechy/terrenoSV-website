@@ -2,13 +2,16 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { OwnerListing, SellerStatus, fetchOwnerListings, getImageUrls } from "@/lib/listings";
 import { fetchAgents } from "@/lib/agents";
 import { formatUsdCurrency } from "@/lib/converter";
+import { resizeImageToBase64 } from "@/lib/imageResize";
 import {
   EditableListingFields,
+  MAX_LISTING_PHOTOS,
+  addListingPhoto,
   clearPortalToken,
   loadPortalToken,
   requestLoginLink,
@@ -433,6 +436,7 @@ function ListingRow({
               listing={listing}
               token={token}
               onCancel={() => setPanel("none")}
+              onLiveChange={(photosRaw) => onPhotosChange(listing.id, photosRaw)}
               onSaved={(photosRaw) => {
                 onPhotosChange(listing.id, photosRaw);
                 setPanel("none");
@@ -582,16 +586,46 @@ function PhotoManager({
   listing,
   token,
   onCancel,
+  onLiveChange,
   onSaved,
 }: {
   listing: OwnerListing;
   token: string;
   onCancel: () => void;
+  onLiveChange: (photosRaw: string) => void;
   onSaved: (photosRaw: string) => void;
 }) {
   const [order, setOrder] = useState<string[]>(() => rawPhotoList(listing.photosRaw));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const remainingSlots = MAX_LISTING_PHOTOS - order.length;
+
+  const handleFilesSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []).slice(0, Math.max(remainingSlots, 0));
+    e.target.value = "";
+    if (files.length === 0) return;
+
+    setUploading(true);
+    setUploadError(null);
+    for (const file of files) {
+      try {
+        const { base64, mimeType } = await resizeImageToBase64(file);
+        const res = await addListingPhoto(token, listing.id, base64, mimeType);
+        if (res.success && res.url && res.photosRaw) {
+          setOrder((prev) => [...prev, res.url!]);
+          onLiveChange(res.photosRaw);
+        } else {
+          setUploadError(res.error || "No se pudo subir una de las fotos.");
+        }
+      } catch {
+        setUploadError("No se pudo procesar una de las fotos.");
+      }
+    }
+    setUploading(false);
+  };
 
   const move = (index: number, delta: number) => {
     setOrder((prev) => {
@@ -679,6 +713,31 @@ function PhotoManager({
             </div>
           );
         })}
+      </div>
+
+      <div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={handleFilesSelected}
+          disabled={uploading || remainingSlots <= 0}
+          className="hidden"
+        />
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading || remainingSlots <= 0}
+          className="rounded-lg border border-dashed border-border px-4 py-2 text-sm font-semibold text-primary hover:border-primary disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {uploading
+            ? "Subiendo…"
+            : remainingSlots <= 0
+              ? `Máximo de ${MAX_LISTING_PHOTOS} fotos alcanzado`
+              : "Agregar fotos"}
+        </button>
+        {uploadError && <p className="mt-1 text-sm text-red-600">{uploadError}</p>}
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}

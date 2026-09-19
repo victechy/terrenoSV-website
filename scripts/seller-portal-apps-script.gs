@@ -132,6 +132,16 @@ const EDITABLE_COLUMNS = {
   description: 'Descripción',
 };
 
+// Photos uploaded through the portal (not the Form) land in their own
+// dedicated Drive folder, auto-created on first use — no manual setup step,
+// and kept separate from wherever the Form's own uploads go.
+const PORTAL_PHOTOS_FOLDER_NAME = 'terrenoSV Portal Photos';
+const MAX_PHOTOS_PER_LISTING = 10;
+const ALLOWED_PHOTO_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+// ~11MB decoded — the client resizes every photo well under this before
+// upload, this is just a server-side backstop against an abusive request.
+const MAX_PHOTO_BASE64_LENGTH = 15 * 1024 * 1024;
+
 function doPost(e) {
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
@@ -148,6 +158,7 @@ function doPost(e) {
     if (body.action === 'update-status') return handleUpdateStatus(body);
     if (body.action === 'update-fields') return handleUpdateFields(body);
     if (body.action === 'update-photos') return handleUpdatePhotos(body);
+    if (body.action === 'add-photo') return handleAddPhoto(body);
     if (body.action === 'list-applications') return handleListApplications(body);
     if (body.action === 'approve-agent') return handleApproveAgent(body);
     if (body.action === 'deny-agent') return handleDenyAgent(body);
@@ -350,6 +361,75 @@ function handleUpdatePhotos(body) {
       listingsSheet.getRange(i + 1, photosCol + 1).setValue(photos.join(', '));
       return jsonResponse({ success: true });
     }
+  }
+
+  return jsonResponse({ success: false, error: 'Listing not found' });
+}
+
+function getOrCreatePortalPhotosFolder() {
+  const existing = DriveApp.getFoldersByName(PORTAL_PHOTOS_FOLDER_NAME);
+  if (existing.hasNext()) return existing.next();
+  return DriveApp.createFolder(PORTAL_PHOTOS_FOLDER_NAME);
+}
+
+// Uploads one photo to Drive and appends it to the listing's photo list in
+// one step. Unlike handleUpdatePhotos (which only reorders/removes photos
+// that already exist on the listing), this is the one action allowed to add
+// a brand new URL — because it's the one that actually put the file there.
+function handleAddPhoto(body) {
+  const token = (body.token || '').toString();
+  const listingId = (body.listingId || '').toString();
+  const mimeType = (body.mimeType || '').toString();
+  const imageBase64 = (body.imageBase64 || '').toString();
+
+  if (ALLOWED_PHOTO_MIME_TYPES.indexOf(mimeType) === -1) {
+    return jsonResponse({ success: false, error: 'Unsupported image type' });
+  }
+  if (!imageBase64 || imageBase64.length > MAX_PHOTO_BASE64_LENGTH) {
+    return jsonResponse({ success: false, error: 'Image missing or too large' });
+  }
+
+  const found = findToken(token);
+  if (!found) return jsonResponse({ success: false, error: 'Session expired' });
+
+  const listingsSheet = SpreadsheetApp.openById(LISTINGS_SHEET_ID).getSheets()[0];
+  const data = listingsSheet.getDataRange().getDisplayValues();
+  const headers = headerRow(data);
+  const timestampCol = headers.indexOf(COL_TIMESTAMP);
+  const emailCol = headers.indexOf(COL_CONTACT_EMAIL);
+  const photosCol = headers.indexOf(COL_PHOTOS);
+
+  if (photosCol === -1) {
+    return jsonResponse({ success: false, error: 'Listings sheet is missing the photos column.' });
+  }
+
+  for (let i = 1; i < data.length; i++) {
+    const rowEmail = (data[i][emailCol] || '').toLowerCase().trim();
+    if (data[i][timestampCol] !== listingId || rowEmail !== found.email) continue;
+
+    const existing = (data[i][photosCol] || '')
+      .split(',')
+      .map(function (p) { return p.trim(); })
+      .filter(function (p) { return p; });
+
+    if (existing.length >= MAX_PHOTOS_PER_LISTING) {
+      return jsonResponse({ success: false, error: 'Ya tiene el máximo de fotos permitido.' });
+    }
+
+    let file;
+    try {
+      const blob = Utilities.newBlob(Utilities.base64Decode(imageBase64), mimeType, 'listing-photo');
+      file = getOrCreatePortalPhotosFolder().createFile(blob);
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    } catch (uploadErr) {
+      return jsonResponse({ success: false, error: 'No se pudo subir la foto.' });
+    }
+
+    const url = 'https://drive.google.com/open?id=' + file.getId();
+    const updated = existing.concat([url]);
+    listingsSheet.getRange(i + 1, photosCol + 1).setValue(updated.join(', '));
+
+    return jsonResponse({ success: true, url: url, photosRaw: updated.join(', ') });
   }
 
   return jsonResponse({ success: false, error: 'Listing not found' });
