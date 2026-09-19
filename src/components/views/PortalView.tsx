@@ -110,13 +110,24 @@ export default function PortalView() {
     setListings((prev) => prev.map((l) => (l.id === id ? { ...l, sellerStatus: status } : l)));
   };
 
+  // Mirrors resetIfRejected in the Apps Script: fixing a rejected listing
+  // (fields or photos) sends it back to the admin's pending queue, so the
+  // portal's own status badge should reflect that immediately too, not just
+  // after the next reload.
+  const clearRejectedIfNeeded = (l: OwnerListing): OwnerListing =>
+    l.publishedStatus === "No" ? { ...l, publishedStatus: "" } : l;
+
   const handleFieldsChange = (id: string, fields: EditableListingFields) => {
-    setListings((prev) => prev.map((l) => (l.id === id ? { ...l, ...fields } : l)));
+    setListings((prev) => prev.map((l) => (l.id === id ? clearRejectedIfNeeded({ ...l, ...fields }) : l)));
   };
 
   const handlePhotosChange = (id: string, photosRaw: string) => {
     setListings((prev) =>
-      prev.map((l) => (l.id === id ? { ...l, photosRaw, photo: getImageUrls(photosRaw)[0] ?? null } : l))
+      prev.map((l) =>
+        l.id === id
+          ? clearRejectedIfNeeded({ ...l, photosRaw, photo: getImageUrls(photosRaw)[0] ?? null })
+          : l
+      )
     );
   };
 
@@ -217,11 +228,12 @@ function LoginScreen({
 }
 
 const STATUS_META: Record<
-  "pending-approval" | "live" | "Pending Sale" | "Sold" | "Removed",
+  "pending-approval" | "live" | "rejected" | "Pending Sale" | "Sold" | "Removed",
   { label: string; className: string }
 > = {
   "pending-approval": { label: "Pendiente de aprobación", className: "bg-amber-100 text-amber-800" },
   live: { label: "Publicado", className: "bg-success/15 text-success" },
+  rejected: { label: "No aprobado", className: "bg-red-100 text-red-700" },
   "Pending Sale": { label: "Pendiente de venta", className: "bg-orange-100 text-orange-800" },
   Sold: { label: "Vendido", className: "bg-slate-200 text-slate-700" },
   Removed: { label: "Eliminado", className: "bg-red-100 text-red-700" },
@@ -229,7 +241,8 @@ const STATUS_META: Record<
 
 function statusKey(listing: OwnerListing): keyof typeof STATUS_META {
   if (listing.sellerStatus !== "Active") return listing.sellerStatus;
-  return listing.publishedStatus === "Yes" ? "live" : "pending-approval";
+  if (listing.publishedStatus === "Yes") return "live";
+  return listing.publishedStatus === "No" ? "rejected" : "pending-approval";
 }
 
 function canChangeStatus(listing: OwnerListing): boolean {

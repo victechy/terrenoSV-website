@@ -265,6 +265,18 @@ function handleUpdateStatus(body) {
   return jsonResponse({ success: false, error: 'Listing not found' });
 }
 
+// If an agent fixes a rejected listing (edits fields, reorders/removes
+// photos, or adds a new one), send it back into the admin's pending queue
+// automatically, rather than leaving it silently stuck under "Rejected"
+// with nothing telling the admin it changed. Only fires when the listing
+// was actually rejected ("No") — never touches an already-published one.
+function resetIfRejected(sheet, headers, sheetRow) {
+  const statusCol = headers.indexOf(COL_PUBLISHED_STATUS);
+  if (statusCol === -1) return;
+  const range = sheet.getRange(sheetRow, statusCol + 1);
+  if ((range.getValue() || '').toString().trim() === 'No') range.setValue('');
+}
+
 function handleUpdateFields(body) {
   const token = (body.token || '').toString();
   const listingId = (body.listingId || '').toString();
@@ -310,6 +322,7 @@ function handleUpdateFields(body) {
         const colIndex = headers.indexOf(colName);
         if (colIndex !== -1) listingsSheet.getRange(row, colIndex + 1).setValue(updates[colName]);
       });
+      resetIfRejected(listingsSheet, headers, row);
       return jsonResponse({ success: true });
     }
   }
@@ -359,6 +372,7 @@ function handleUpdatePhotos(body) {
       if (hasUnknownPhoto) return jsonResponse({ success: false, error: 'Invalid photo reference' });
 
       listingsSheet.getRange(i + 1, photosCol + 1).setValue(photos.join(', '));
+      resetIfRejected(listingsSheet, headers, i + 1);
       return jsonResponse({ success: true });
     }
   }
@@ -428,6 +442,7 @@ function handleAddPhoto(body) {
     const url = 'https://drive.google.com/open?id=' + file.getId();
     const updated = existing.concat([url]);
     listingsSheet.getRange(i + 1, photosCol + 1).setValue(updated.join(', '));
+    resetIfRejected(listingsSheet, headers, i + 1);
 
     return jsonResponse({ success: true, url: url, photosRaw: updated.join(', ') });
   }
