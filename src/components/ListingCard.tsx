@@ -63,7 +63,7 @@ export default function ListingCard({ listing, locale }: { listing: Listing; loc
             fill
             unoptimized
             draggable={false}
-            className="object-cover"
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
             sizes="(min-width: 1024px) 320px, (min-width: 640px) 45vw, 90vw"
           />
         ) : (
