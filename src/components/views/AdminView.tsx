@@ -468,11 +468,32 @@ function ListingsPanel({
   );
 }
 
-const LISTING_STATUS_META: Record<string, { label: string; className: string }> = {
-  Yes: { label: "Published", className: "bg-success/15 text-success" },
-  No: { label: "Rejected", className: "bg-red-100 text-red-700" },
-  "": { label: "Pending review", className: "bg-amber-100 text-amber-800" },
+// Matches PENDING_MARKER_PREFIX in seller-portal-apps-script.gs — when an
+// agent fixes a previously-rejected listing, the portal writes this back
+// into Published Status instead of a plain blank, so the admin can tell a
+// resubmission apart from a listing that's never been reviewed at all.
+const PENDING_MARKER_PREFIX = "Pending: ";
+const CHANGE_TYPE_LABELS: Record<string, string> = {
+  photos: "photos updated",
+  details: "price/title/description updated",
 };
+
+function listingStatusBadge(publishedStatus: string): { label: string; className: string } {
+  if (publishedStatus === "Yes") return { label: "Published", className: "bg-success/15 text-success" };
+  if (publishedStatus === "No") return { label: "Rejected", className: "bg-red-100 text-red-700" };
+
+  if (publishedStatus.startsWith(PENDING_MARKER_PREFIX)) {
+    const types = publishedStatus
+      .slice(PENDING_MARKER_PREFIX.length)
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean)
+      .map((t) => CHANGE_TYPE_LABELS[t] || t);
+    return { label: `Resubmitted · ${types.join(" and ")}`, className: "bg-amber-100 text-amber-800" };
+  }
+
+  return { label: "New — never reviewed", className: "bg-amber-100 text-amber-800" };
+}
 
 function AdminListingRow({
   listing,
@@ -489,7 +510,7 @@ function AdminListingRow({
 
   const photos = getImageUrls(listing.photosRaw);
   const photo = photos[0];
-  const statusMeta = LISTING_STATUS_META[listing.publishedStatus] || LISTING_STATUS_META[""];
+  const statusMeta = listingStatusBadge(listing.publishedStatus);
   const priceNumber = parseFloat(listing.price);
 
   const handleSetStatus = async (status: "Yes" | "No") => {

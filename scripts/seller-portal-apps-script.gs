@@ -265,16 +265,32 @@ function handleUpdateStatus(body) {
   return jsonResponse({ success: false, error: 'Listing not found' });
 }
 
-// If an agent fixes a rejected listing (edits fields, reorders/removes
-// photos, or adds a new one), send it back into the admin's pending queue
-// automatically, rather than leaving it silently stuck under "Rejected"
-// with nothing telling the admin it changed. Only fires when the listing
-// was actually rejected ("No") — never touches an already-published one.
-function resetIfRejected(sheet, headers, sheetRow) {
+// If an agent fixes a previously-rejected listing (edits fields,
+// reorders/removes photos, or adds a new one), send it back into the
+// admin's pending queue automatically -- tagged with what changed, so the
+// admin can tell a resubmission apart from a fresh, never-reviewed listing
+// without re-inspecting everything from scratch. Only fires on a listing
+// that's actually been rejected ("No") or already carries this marker from
+// an earlier edit since the rejection -- never touches a brand-new, blank
+// submission (that's correctly "never reviewed" on its own) or an
+// already-published one.
+var PENDING_MARKER_PREFIX = 'Pending: ';
+
+function markChangeType(sheet, headers, sheetRow, changeType) {
   const statusCol = headers.indexOf(COL_PUBLISHED_STATUS);
   if (statusCol === -1) return;
   const range = sheet.getRange(sheetRow, statusCol + 1);
-  if ((range.getValue() || '').toString().trim() === 'No') range.setValue('');
+  const current = (range.getValue() || '').toString().trim();
+
+  const wasRejected = current === 'No';
+  const wasMarked = current.indexOf(PENDING_MARKER_PREFIX) === 0;
+  if (!wasRejected && !wasMarked) return;
+
+  const existingTypes = wasMarked
+    ? current.slice(PENDING_MARKER_PREFIX.length).split(',').map(function (s) { return s.trim(); }).filter(function (s) { return s; })
+    : [];
+  if (existingTypes.indexOf(changeType) === -1) existingTypes.push(changeType);
+  range.setValue(PENDING_MARKER_PREFIX + existingTypes.join(', '));
 }
 
 function handleUpdateFields(body) {
@@ -322,7 +338,7 @@ function handleUpdateFields(body) {
         const colIndex = headers.indexOf(colName);
         if (colIndex !== -1) listingsSheet.getRange(row, colIndex + 1).setValue(updates[colName]);
       });
-      resetIfRejected(listingsSheet, headers, row);
+      markChangeType(listingsSheet, headers, row, 'details');
       return jsonResponse({ success: true });
     }
   }
@@ -372,7 +388,7 @@ function handleUpdatePhotos(body) {
       if (hasUnknownPhoto) return jsonResponse({ success: false, error: 'Invalid photo reference' });
 
       listingsSheet.getRange(i + 1, photosCol + 1).setValue(photos.join(', '));
-      resetIfRejected(listingsSheet, headers, i + 1);
+      markChangeType(listingsSheet, headers, i + 1, 'photos');
       return jsonResponse({ success: true });
     }
   }
@@ -442,7 +458,7 @@ function handleAddPhoto(body) {
     const url = 'https://drive.google.com/open?id=' + file.getId();
     const updated = existing.concat([url]);
     listingsSheet.getRange(i + 1, photosCol + 1).setValue(updated.join(', '));
-    resetIfRejected(listingsSheet, headers, i + 1);
+    markChangeType(listingsSheet, headers, i + 1, 'photos');
 
     return jsonResponse({ success: true, url: url, photosRaw: updated.join(', ') });
   }
