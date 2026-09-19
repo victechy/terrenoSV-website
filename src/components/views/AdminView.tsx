@@ -541,9 +541,16 @@ function AdminListingRow({
           <div className="flex flex-wrap gap-2">
             {photos.length > 0 ? (
               photos.map((p, i) => (
-                <div key={p + i} className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-surface-muted">
+                <a
+                  key={p + i}
+                  href={p}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-surface-muted"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <Image src={p} alt="" fill unoptimized className="object-cover" sizes="80px" />
-                </div>
+                </a>
               ))
             ) : (
               <p className="text-sm text-foreground-muted">No photos.</p>
