@@ -287,6 +287,7 @@ export type OwnerListing = {
   slug: string;
   title: string;
   photo: string | null;
+  photosRaw: string;
   price: number | null;
   propertyType: string;
   transaction: string;
@@ -305,7 +306,8 @@ function mapRowForOwner(row: Record<string, string>): OwnerListing | null {
 
   const priceRaw = row["Precio (USD)"];
   const price = priceRaw ? parseFloat(String(priceRaw).replace(/[^0-9.]/g, "")) : null;
-  const photos = getImageUrls(row["Fotos de la propiedad (hasta 5)"]);
+  const photosRaw = row["Fotos de la propiedad (hasta 5)"] || "";
+  const photos = getImageUrls(photosRaw);
   const rawSellerStatus = (row["Seller Status"] || "").trim();
 
   return {
@@ -313,6 +315,7 @@ function mapRowForOwner(row: Record<string, string>): OwnerListing | null {
     slug: slugify(title, timestamp),
     title,
     photo: photos[0] ?? null,
+    photosRaw,
     price: price && price > 0 ? price : null,
     propertyType: row["Tipo de propiedad"] || "",
     transaction: row["¿Qué deseas hacer con esta propiedad?"] || "Venta",

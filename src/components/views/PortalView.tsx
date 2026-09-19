@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { OwnerListing, SellerStatus, fetchOwnerListings } from "@/lib/listings";
+import { OwnerListing, SellerStatus, fetchOwnerListings, getImageUrls } from "@/lib/listings";
 import { fetchAgents } from "@/lib/agents";
 import { formatUsdCurrency } from "@/lib/converter";
 import {
@@ -14,9 +14,12 @@ import {
   requestLoginLink,
   savePortalToken,
   updateListingFields,
+  updateListingPhotos,
   updateListingStatus,
   verifyPortalToken,
 } from "@/lib/portal";
+
+const SUPPORT_EMAIL = "hello@terrenosv.org";
 import ShareButton from "../ShareButton";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -108,6 +111,12 @@ export default function PortalView() {
     setListings((prev) => prev.map((l) => (l.id === id ? { ...l, ...fields } : l)));
   };
 
+  const handlePhotosChange = (id: string, photosRaw: string) => {
+    setListings((prev) =>
+      prev.map((l) => (l.id === id ? { ...l, photosRaw, photo: getImageUrls(photosRaw)[0] ?? null } : l))
+    );
+  };
+
   if (phase === "loading") {
     return (
       <div className="flex min-h-[60vh] items-center justify-center px-4">
@@ -139,6 +148,7 @@ export default function PortalView() {
       setExpandedId={setExpandedId}
       onStatusChange={handleStatusChange}
       onFieldsChange={handleFieldsChange}
+      onPhotosChange={handlePhotosChange}
       onLogout={handleLogout}
       agentSlug={agentSlug}
     />
@@ -235,6 +245,7 @@ function Dashboard({
   setExpandedId,
   onStatusChange,
   onFieldsChange,
+  onPhotosChange,
   onLogout,
   agentSlug,
 }: {
@@ -247,6 +258,7 @@ function Dashboard({
   setExpandedId: (id: string | null) => void;
   onStatusChange: (id: string, status: Exclude<SellerStatus, "Active">) => void;
   onFieldsChange: (id: string, fields: EditableListingFields) => void;
+  onPhotosChange: (id: string, photosRaw: string) => void;
   onLogout: () => void;
   agentSlug: string | null;
 }) {
@@ -299,6 +311,7 @@ function Dashboard({
                 onToggle={() => setExpandedId(expandedId === listing.id ? null : listing.id)}
                 onStatusChange={onStatusChange}
                 onFieldsChange={onFieldsChange}
+                onPhotosChange={onPhotosChange}
               />
             ))}
           </div>
@@ -336,7 +349,10 @@ function ShareTab({ agentSlug }: { agentSlug: string | null }) {
   if (!agentSlug) {
     return (
       <div className="mt-6 rounded-xl bg-surface p-6 text-sm text-foreground-muted shadow-panel">
-        Tu página pública para compartir tus publicaciones aún no está activada. Contáctanos para activarla.
+        Tu página pública para compartir tus publicaciones aún no está activada.{" "}
+        <a href={`mailto:${SUPPORT_EMAIL}`} className="font-semibold text-primary hover:underline">
+          Contáctanos para activarla.
+        </a>
       </div>
     );
   }
@@ -367,6 +383,7 @@ function ListingRow({
   onToggle,
   onStatusChange,
   onFieldsChange,
+  onPhotosChange,
 }: {
   listing: OwnerListing;
   token: string;
@@ -374,8 +391,9 @@ function ListingRow({
   onToggle: () => void;
   onStatusChange: (id: string, status: Exclude<SellerStatus, "Active">) => void;
   onFieldsChange: (id: string, fields: EditableListingFields) => void;
+  onPhotosChange: (id: string, photosRaw: string) => void;
 }) {
-  const [editing, setEditing] = useState(false);
+  const [panel, setPanel] = useState<"none" | "fields" | "photos">("none");
   const meta = STATUS_META[statusKey(listing)];
 
   return (
@@ -400,26 +418,45 @@ function ListingRow({
 
       {expanded && (
         <div className="border-t border-border p-4">
-          {editing ? (
+          {panel === "fields" ? (
             <EditForm
               listing={listing}
               token={token}
-              onCancel={() => setEditing(false)}
+              onCancel={() => setPanel("none")}
               onSaved={(fields) => {
                 onFieldsChange(listing.id, fields);
-                setEditing(false);
+                setPanel("none");
+              }}
+            />
+          ) : panel === "photos" ? (
+            <PhotoManager
+              listing={listing}
+              token={token}
+              onCancel={() => setPanel("none")}
+              onSaved={(photosRaw) => {
+                onPhotosChange(listing.id, photosRaw);
+                setPanel("none");
               }}
             />
           ) : (
             <div className="flex flex-col gap-3">
               {canChangeStatus(listing) && (
-                <button
-                  type="button"
-                  onClick={() => setEditing(true)}
-                  className="self-start text-sm font-semibold text-primary hover:underline"
-                >
-                  Editar título, precio o descripción
-                </button>
+                <div className="flex flex-wrap gap-x-4 gap-y-1">
+                  <button
+                    type="button"
+                    onClick={() => setPanel("fields")}
+                    className="self-start text-sm font-semibold text-primary hover:underline"
+                  >
+                    Editar título, precio o descripción
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPanel("photos")}
+                    className="self-start text-sm font-semibold text-primary hover:underline"
+                  >
+                    Reordenar fotos
+                  </button>
+                </div>
               )}
               <ListingActions listing={listing} token={token} onStatusChange={onStatusChange} />
             </div>
@@ -534,6 +571,159 @@ function EditForm({
   );
 }
 
+function rawPhotoList(photosRaw: string): string[] {
+  return photosRaw
+    .split(",")
+    .map((p) => p.trim())
+    .filter((p) => p.length > 0);
+}
+
+function PhotoManager({
+  listing,
+  token,
+  onCancel,
+  onSaved,
+}: {
+  listing: OwnerListing;
+  token: string;
+  onCancel: () => void;
+  onSaved: (photosRaw: string) => void;
+}) {
+  const [order, setOrder] = useState<string[]>(() => rawPhotoList(listing.photosRaw));
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const move = (index: number, delta: number) => {
+    setOrder((prev) => {
+      const target = index + delta;
+      if (target < 0 || target >= prev.length) return prev;
+      const next = prev.slice();
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  };
+
+  const remove = (index: number) => {
+    setOrder((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (order.length === 0) {
+      setError("Debes dejar al menos una foto.");
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+    const res = await updateListingPhotos(token, listing.id, order);
+    setSaving(false);
+    if (res.success) {
+      onSaved(order.join(", "));
+    } else {
+      setError(res.error || "No se pudo guardar. Intenta de nuevo.");
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+      <p className="text-xs text-foreground-muted">
+        La primera foto es la principal. Usa las flechas para reordenar, o la X para quitar una foto.
+      </p>
+
+      <div className="flex flex-col gap-2">
+        {order.map((rawUrl, i) => {
+          const displayUrl = getImageUrls(rawUrl)[0];
+          return (
+            <div
+              key={rawUrl + i}
+              className="flex items-center gap-3 rounded-lg border border-border bg-background p-2"
+            >
+              <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-surface-muted">
+                {displayUrl ? (
+                  <Image src={displayUrl} alt="" fill unoptimized className="object-cover" sizes="56px" />
+                ) : null}
+              </div>
+              <span className="text-xs font-medium text-foreground-muted">
+                {i === 0 ? "Principal" : `Foto ${i + 1}`}
+              </span>
+              <div className="ml-auto flex items-center gap-1">
+                <button
+                  type="button"
+                  disabled={i === 0}
+                  onClick={() => move(i, -1)}
+                  aria-label="Mover antes"
+                  className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-foreground-muted hover:border-primary hover:text-primary disabled:opacity-30"
+                >
+                  <ArrowIcon direction="up" />
+                </button>
+                <button
+                  type="button"
+                  disabled={i === order.length - 1}
+                  onClick={() => move(i, 1)}
+                  aria-label="Mover después"
+                  className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-foreground-muted hover:border-primary hover:text-primary disabled:opacity-30"
+                >
+                  <ArrowIcon direction="down" />
+                </button>
+                <button
+                  type="button"
+                  disabled={order.length <= 1}
+                  onClick={() => remove(i)}
+                  aria-label="Quitar foto"
+                  className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-foreground-muted hover:border-red-500 hover:text-red-600 disabled:opacity-30"
+                >
+                  <XIcon />
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {error && <p className="text-sm text-red-600">{error}</p>}
+
+      <div className="flex gap-2">
+        <button
+          type="submit"
+          disabled={saving}
+          className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+        >
+          {saving ? "Guardando…" : "Guardar cambios"}
+        </button>
+        <button
+          type="button"
+          disabled={saving}
+          onClick={onCancel}
+          className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground-muted"
+        >
+          Cancelar
+        </button>
+      </div>
+    </form>
+  );
+}
+
+function ArrowIcon({ direction }: { direction: "up" | "down" }) {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d={direction === "up" ? "M12 19V5M5 12l7-7 7 7" : "M12 5v14M5 12l7 7 7-7"}
+      />
+    </svg>
+  );
+}
+
+function XIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 6l12 12M18 6L6 18" />
+    </svg>
+  );
+}
+
 const ACTION_LABELS: Record<Exclude<SellerStatus, "Active">, string> = {
   "Pending Sale": "Marcar pendiente de venta",
   Sold: "Marcar como vendido",
@@ -556,7 +746,11 @@ function ListingActions({
   if (!canChangeStatus(listing)) {
     return (
       <p className="text-sm text-foreground-muted">
-        Esta publicación ya no se puede modificar desde aquí. Si necesitas volver a publicarla, contáctanos.
+        Esta publicación ya no se puede modificar desde aquí. Si necesitas volver a publicarla,{" "}
+        <a href={`mailto:${SUPPORT_EMAIL}`} className="font-semibold text-primary hover:underline">
+          contáctanos
+        </a>
+        .
       </p>
     );
   }

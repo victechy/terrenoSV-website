@@ -80,6 +80,23 @@ export async function updateListingFields(
   }
 }
 
+export async function updateListingPhotos(
+  token: string,
+  listingId: string,
+  photos: string[]
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    return await callPortal<{ success: boolean; error?: string }>({
+      action: "update-photos",
+      token,
+      listingId,
+      photos,
+    });
+  } catch {
+    return { success: false, error: "network" };
+  }
+}
+
 export type Application = {
   id: string;
   email: string;

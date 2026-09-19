@@ -147,6 +147,7 @@ function doPost(e) {
     if (body.action === 'verify-token') return handleVerifyToken(body);
     if (body.action === 'update-status') return handleUpdateStatus(body);
     if (body.action === 'update-fields') return handleUpdateFields(body);
+    if (body.action === 'update-photos') return handleUpdatePhotos(body);
     if (body.action === 'list-applications') return handleListApplications(body);
     if (body.action === 'approve-agent') return handleApproveAgent(body);
     if (body.action === 'deny-agent') return handleDenyAgent(body);
@@ -298,6 +299,55 @@ function handleUpdateFields(body) {
         const colIndex = headers.indexOf(colName);
         if (colIndex !== -1) listingsSheet.getRange(row, colIndex + 1).setValue(updates[colName]);
       });
+      return jsonResponse({ success: true });
+    }
+  }
+
+  return jsonResponse({ success: false, error: 'Listing not found' });
+}
+
+// Reorders and/or removes photos on an existing listing. Deliberately can't
+// add a new photo URL here — every submitted photo must already be one of
+// the listing's existing photos, so this can't be used to inject arbitrary
+// links. Adding new photos (upload) is a separate, not-yet-built feature.
+function handleUpdatePhotos(body) {
+  const token = (body.token || '').toString();
+  const listingId = (body.listingId || '').toString();
+  const photos = Array.isArray(body.photos)
+    ? body.photos.map(function (p) { return (p || '').toString().trim(); }).filter(function (p) { return p; })
+    : null;
+
+  if (!photos || photos.length === 0) {
+    return jsonResponse({ success: false, error: 'At least one photo is required' });
+  }
+
+  const found = findToken(token);
+  if (!found) return jsonResponse({ success: false, error: 'Session expired' });
+
+  const listingsSheet = SpreadsheetApp.openById(LISTINGS_SHEET_ID).getSheets()[0];
+  const data = listingsSheet.getDataRange().getDisplayValues();
+  const headers = headerRow(data);
+  const timestampCol = headers.indexOf(COL_TIMESTAMP);
+  const emailCol = headers.indexOf(COL_CONTACT_EMAIL);
+  const photosCol = headers.indexOf(COL_PHOTOS);
+
+  if (photosCol === -1) {
+    return jsonResponse({ success: false, error: 'Listings sheet is missing the photos column.' });
+  }
+
+  for (let i = 1; i < data.length; i++) {
+    const rowEmail = (data[i][emailCol] || '').toLowerCase().trim();
+    if (data[i][timestampCol] === listingId && rowEmail === found.email) {
+      const existing = (data[i][photosCol] || '')
+        .split(',')
+        .map(function (p) { return p.trim(); })
+        .filter(function (p) { return p; });
+      const existingSet = {};
+      existing.forEach(function (p) { existingSet[p] = true; });
+      const hasUnknownPhoto = photos.some(function (p) { return !existingSet[p]; });
+      if (hasUnknownPhoto) return jsonResponse({ success: false, error: 'Invalid photo reference' });
+
+      listingsSheet.getRange(i + 1, photosCol + 1).setValue(photos.join(', '));
       return jsonResponse({ success: true });
     }
   }
